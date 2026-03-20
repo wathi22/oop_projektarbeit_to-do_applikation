@@ -1,3 +1,0 @@
-nicegui
-sqlalchemy
-pytest
