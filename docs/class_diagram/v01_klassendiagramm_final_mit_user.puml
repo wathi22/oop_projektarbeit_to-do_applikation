@@ -1,0 +1,86 @@
+@startuml Klassendiagramm_Final_mit_User
+
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam classBackgroundColor #F7F7F7
+skinparam classBorderColor #888888
+skinparam arrowColor #555555
+skinparam packageBackgroundColor #EFEFEF
+skinparam packageBorderColor #AAAAAA
+
+package "Präsentationsschicht (Browser / NiceGUI Engine)" #E8F4FD {
+  note "Thin Client\nKeine eigenen Klassen\n(Vue.js + Quasar via NiceGUI)" as N1
+}
+
+package "Anwendungslogik (Server-seitiges Frontend)" #EAF7EA {
+
+  class User {
+    - id : int
+    - firstname : str
+    - lastname : str
+    - email : str
+    - password : str
+    --
+    + hash_password() : str
+    + check_password() : bool
+  }
+
+  class TodoList {
+    - id : int
+    - owner : User
+    - todos : list[Todo]
+    --
+    + add_todo() : void
+    + remove_todo() : void
+    + get_all_todos() : list[Todo]
+    + filter_todos() : list[Todo]
+  }
+
+  class Todo {
+    - id : int
+    - description : str
+    - priority : str
+    - due_date : str
+    - status : str
+    - created_at : datetime
+    --
+    + toggle_status() : void
+    + is_overdue() : bool
+  }
+
+  User *-- "1" TodoList : besitzt
+  TodoList *-- "0..*" Todo : enthält
+
+}
+
+package "Persistenzschicht (SQLite via SQLAlchemy ORM)" #FEF9E7 {
+
+  class UserHandler {
+    - db_url : str
+    - session : sqlalchemy.orm.Session
+    --
+    + save(obj) : void
+    + delete(id) : void
+    + get_by_id(id) : object
+    + get_all() : list
+    + update(obj) : void
+  }
+
+  class TodoListHandler {
+    - db_url : str
+    - session : sqlalchemy.orm.Session
+    --
+    + save(obj) : void
+    + delete(id) : void
+    + get_by_id(id) : object
+    + get_all() : list
+    + update(obj) : void
+  }
+
+}
+
+UserHandler ..> User : verwaltet
+TodoListHandler ..> TodoList : verwaltet
+TodoListHandler ..> Todo : verwaltet
+
+@enduml
