@@ -63,7 +63,7 @@ git clone <https://github.com/wathi22/oop_projektarbeit_to-do_applikation.git>
 cd <REPOSITORY-NAME>
 ```
 
-### 2. Virtuelle Umgebung erstellen
+### 2. Virtuelle Umgebung erstellen (Python muss installiert sein!)
 
 ```bash
 python -m venv .venv

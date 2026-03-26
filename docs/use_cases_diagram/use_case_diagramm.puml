@@ -1,0 +1,46 @@
+@startuml Use_Case_Diagramm
+
+left to right direction
+skinparam actorStyle awesome
+skinparam usecaseBackgroundColor #F7F7F7
+skinparam usecaseBorderColor #888888
+skinparam arrowColor #555555
+
+actor Benutzer
+
+rectangle "To-Do" {
+
+  ' Benutzer
+  usecase "Registrieren" as UC1
+  usecase "Einloggen" as UC2
+  usecase "Ausloggen" as UC3
+
+  ' Aufgaben
+  usecase "Aufgaben anzeigen" as UC4
+  usecase "Aufgabe hinzufügen" as UC5
+  usecase "Aufgabe bearbeiten" as UC6
+  usecase "Aufgabe als erledigt markieren" as UC7
+  usecase "Aufgabe löschen" as UC8
+  usecase "Aufgaben filtern & sortieren" as UC9
+
+}
+
+Benutzer --> UC1
+Benutzer --> UC2
+Benutzer --> UC3
+Benutzer --> UC4
+Benutzer --> UC5
+Benutzer --> UC6
+Benutzer --> UC7
+Benutzer --> UC8
+Benutzer --> UC9
+
+' Abhängigkeiten
+UC2 ..> UC4 : <<include>>
+UC2 ..> UC5 : <<include>>
+UC2 ..> UC6 : <<include>>
+UC2 ..> UC7 : <<include>>
+UC2 ..> UC8 : <<include>>
+UC2 ..> UC9 : <<include>>
+
+@enduml
