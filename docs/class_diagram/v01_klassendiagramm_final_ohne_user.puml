@@ -16,12 +16,13 @@ package "Anwendungslogik (Server-seitiges Frontend)" #EAF7EA {
 
   class TodoList {
     - id : int
+    - name : str
     - todos : list[Todo]
     --
-    + add_todo() : void
-    + remove_todo() : void
+    + add_todo(todo : Todo) : void
+    + remove_todo(todo_id : int) : void
     + get_all_todos() : list[Todo]
-    + filter_todos() : list[Todo]
+    + filter_todos(status : str, priority : str) : list[Todo]
   }
 
   class Todo {
@@ -31,6 +32,7 @@ package "Anwendungslogik (Server-seitiges Frontend)" #EAF7EA {
     - due_date : str
     - status : str
     - created_at : datetime
+    - todo_list_id : int
     --
     + toggle_status() : void
     + is_overdue() : bool
@@ -43,19 +45,31 @@ package "Anwendungslogik (Server-seitiges Frontend)" #EAF7EA {
 package "Persistenzschicht (SQLite via SQLAlchemy ORM)" #FEF9E7 {
 
   class TodoListHandler {
-    - db_url : str
     - session : sqlalchemy.orm.Session
     --
-    + save(obj) : void
-    + delete(id) : void
-    + get_by_id(id) : object
-    + get_all() : list
-    + update(obj) : void
+    + save(todolist : TodoList) : void
+    + delete(todolist_id : int) : void
+    + get_by_id(todolist_id : int) : TodoList
+    + get_all() : list[TodoList]
+    + update(todolist_id : int) : void
+    + create_list(name : str) : void
+  }
+
+  class TodoHandler {
+    - session : sqlalchemy.orm.Session
+    --
+    + save(todo : Todo) : void
+    + delete(todo_id : int) : void
+    + get_by_id(todo_id : int) : Todo
+    + get_all() : list[Todo]
+    + update(todo_id : int, description : str, priority : str, due_date : str) : void
+    + get_todos_for_list(todolist_id : int, status_filter : str, priority_filter : str) : list[Todo]
+    + toggle_status(todo_id : int) : void
   }
 
 }
 
 TodoListHandler ..> TodoList : verwaltet
-TodoListHandler ..> Todo : verwaltet
+TodoHandler ..> Todo : verwaltet
 
 @enduml
