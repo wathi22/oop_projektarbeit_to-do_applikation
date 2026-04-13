@@ -1,0 +1,115 @@
+@startuml Klassendiagramm_v02_mit_User
+
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam classBackgroundColor #F7F7F7
+skinparam classBorderColor #888888
+skinparam arrowColor #555555
+skinparam packageBackgroundColor #EFEFEF
+skinparam packageBorderColor #AAAAAA
+
+package "Präsentationsschicht (Browser / NiceGUI Engine)" #E8F4FD {
+  note "Thin Client — Vue.js + Quasar via NiceGUI\nAnsichten: Board · Liste · Zeitplan · Kalender · Dashboard\nKeine eigenen Python-Klassen, nur ui.py (Funktionen)" as N1
+}
+
+package "Anwendungslogik (Server-seitiges Frontend)" #EAF7EA {
+
+  class User {
+    - id : int
+    - firstname : str
+    - lastname : str
+    - email : str
+    - password_hash : str
+    --
+    + hash_password(plain_password : str) : str
+    + check_password(plain_password : str) : bool
+    + full_name() : str
+  }
+
+  class TodoList {
+    - id : int
+    - name : str
+    - owner_id : int
+    - todos : list[Todo]
+    --
+    + add_todo(todo : Todo) : void
+    + remove_todo(todo_id : int) : void
+    + get_all_todos() : list[Todo]
+    + filter_todos(status : str, priority : str) : list[Todo]
+  }
+
+  class Todo {
+    - id : int
+    - title : str
+    - description : str
+    - priority : str
+    - status : str
+    - progress : int
+    - start_date : str
+    - due_date : str
+    - labels : str
+    - created_at : datetime
+    - todo_list_id : int
+    --
+    + toggle_status() : void
+    + is_overdue() : bool
+    + update_progress(value : int) : void
+  }
+
+  note right of Todo
+    priority: 'low' | 'medium' | 'high' | 'critical'
+    status:   'Backlog' | 'To-Do' | 'In Progress' | 'Done'
+    progress: 0–100 (%)
+    labels:   kommagetrennte Zeichenkette
+  end note
+
+  User *-- "0..*" TodoList : besitzt
+  TodoList *-- "0..*" Todo : enthält
+
+}
+
+package "Persistenzschicht (SQLite via SQLAlchemy ORM)" #FEF9E7 {
+
+  class UserHandler {
+    - session : sqlalchemy.orm.Session
+    --
+    + save(user : User) : void
+    + delete(user_id : int) : void
+    + get_by_id(user_id : int) : User
+    + get_all() : list[User]
+    + update(user_id : int, firstname : str, lastname : str, email : str) : void
+    + get_by_email(email : str) : User
+  }
+
+  class TodoListHandler {
+    - session : sqlalchemy.orm.Session
+    --
+    + save(todolist : TodoList) : void
+    + delete(todolist_id : int) : void
+    + get_by_id(todolist_id : int) : TodoList
+    + get_all() : list[TodoList]
+    + update(todolist_id : int, name : str) : void
+    + get_lists_for_user(user_id : int) : list[TodoList]
+    + create_list(user_id : int, name : str) : void
+  }
+
+  class TodoHandler {
+    - session : sqlalchemy.orm.Session
+    --
+    + save(todo : Todo) : void
+    + delete(todo_id : int) : void
+    + get_by_id(todo_id : int) : Todo
+    + get_all() : list[Todo]
+    + update(todo_id : int, title : str, description : str, priority : str, status : str, start_date : str, due_date : str, labels : str) : void
+    + get_todos_for_list(todolist_id : int, status_filter : str, priority_filter : str) : list[Todo]
+    + toggle_status(todo_id : int) : void
+    + update_progress(todo_id : int, value : int) : void
+  }
+
+}
+
+UserHandler ..> User : verwaltet
+TodoListHandler ..> TodoList : verwaltet
+TodoHandler ..> Todo : verwaltet
+
+@enduml

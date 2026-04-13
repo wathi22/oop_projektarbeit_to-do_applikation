@@ -161,7 +161,7 @@ pip install -r requirements.txt
 #### 6. Anwendung starten
 
 ```bash
-python app/main.py
+python3 app/main.py
 ```
 
 👉 Danach öffnet sich die Anwendung automatisch im Browser.
