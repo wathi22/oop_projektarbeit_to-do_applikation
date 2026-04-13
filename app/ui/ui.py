@@ -23,9 +23,13 @@ def todo_page():
         for todo in todos:
             with todo_list_container:
                 with ui.row().classes("gap-2 items-center"):
-                    ui.label(todo.description).classes("flex-1")
+                    is_done = todo.status == "erledigt"
+                    ui.label(todo.description).classes("flex-1 line-through text-gray-400" if is_done else "flex-1")
                     ui.label(todo.priority).classes("w-24 text-center")
                     ui.label(todo.due_date).classes("w-32 text-center")
+                    ui.label(todo.status).classes("w-24 text-center text-green-600" if is_done else "w-24 text-center text-yellow-600")
+                    toggle_button = ui.button("✓ Erledigt" if not is_done else "↩ Offen").classes("w-28")
+                    toggle_button.on_click(lambda id=todo.id: toggle_status(id))
                     delete_button = ui.button("Delete").classes("w-20")
                     delete_button.on_click(lambda id=todo.id: delete_todo(id))
 
@@ -40,6 +44,10 @@ def todo_page():
             description_input.value = ""
             priority_input.value = None
             due_date_input.value = ""
+
+    def toggle_status(todo_id: int):
+        handler.toggle_status(todo_id)
+        refresh_todo_list()
 
     def delete_todo(todo_id: int):
         handler.delete(todo_id)

@@ -24,6 +24,13 @@ class TodoListHandler:
         with Session(engine) as session:
             return session.get(Todo, todo_id)
         
+    def toggle_status(self, todo_id: int):
+        with Session(engine) as session:
+            todo = session.get(Todo, todo_id)
+            if todo:
+                todo.toggle_status()
+                session.commit()
+
     def update(self, todo_id: int, description: str | None = None, priority: str | None = None, due_date: str | None = None):
         with Session(engine) as session:
             todo = session.get(Todo, todo_id)

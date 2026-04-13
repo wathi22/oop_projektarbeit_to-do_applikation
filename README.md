@@ -56,22 +56,26 @@ Die neue Anwendung basiert auf einer **3-Schichten-Architektur**:
 
 ## ⚙️ Projekt Setup (lokale Umgebung)
 
-### 1. Repository klonen
+---
+
+### Windows
+
+#### 1. Repository klonen
 
 ```bash
 git clone <https://github.com/wathi22/oop_projektarbeit_to-do_applikation.git>
 cd <REPOSITORY-NAME>
 ```
 
-### 2. Virtuelle Umgebung erstellen (Python muss installiert sein!)
+#### 2. Virtuelle Umgebung erstellen (Python muss installiert sein!)
 
 ```bash
 python -m venv .venv
 ```
 
-### 3. Virtuelle Umgebung aktivieren
+#### 3. Virtuelle Umgebung aktivieren
 
-**Windows (PowerShell):**
+**PowerShell:**
 
 ```bash
 .venv\Scripts\Activate.ps1
@@ -89,23 +93,84 @@ Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
 .venv\Scripts\activate.bat
 ```
 
----
-
-### 4. Abhängigkeiten installieren
+#### 4. Abhängigkeiten installieren
 
 ```bash
 pip install -r requirements.txt
 ```
 
----
-
-## ▶️ Anwendung starten
+#### 5. Anwendung starten
 
 ```bash
 python app/main.py
 ```
 
 👉 Danach öffnet sich die Anwendung im Browser.
+
+---
+
+### macOS
+
+#### 1. Python installieren
+
+Python ist auf macOS nicht standardmässig in der richtigen Version vorinstalliert. Empfohlen wird die Installation über [Homebrew](https://brew.sh):
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+Danach Python installieren:
+
+```bash
+brew install python
+```
+
+Python-Version prüfen (mindestens 3.10 empfohlen):
+
+```bash
+python3 --version
+```
+
+#### 2. Repository klonen
+
+```bash
+git clone https://github.com/wathi22/oop_projektarbeit_to-do_applikation.git
+cd oop_projektarbeit_to-do_applikation
+```
+
+#### 3. Virtuelle Umgebung erstellen
+
+```bash
+python3 -m venv .venv
+```
+
+#### 4. Virtuelle Umgebung aktivieren
+
+```bash
+source .venv/bin/activate
+```
+
+Nach erfolgreicher Aktivierung erscheint `(.venv)` am Anfang der Terminal-Zeile.
+
+#### 5. Abhängigkeiten installieren
+
+```bash
+pip install -r requirements.txt
+```
+
+#### 6. Anwendung starten
+
+```bash
+python app/main.py
+```
+
+👉 Danach öffnet sich die Anwendung automatisch im Browser.
+
+#### Virtuelle Umgebung deaktivieren (optional)
+
+```bash
+deactivate
+```
 
 ---
 
