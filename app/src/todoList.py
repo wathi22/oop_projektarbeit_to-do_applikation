@@ -1,4 +1,4 @@
-from .todo import Todo
+from app.src.todo import Todo
 
 class TodoList:
 
