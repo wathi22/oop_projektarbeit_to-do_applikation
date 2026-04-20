@@ -1,10 +1,7 @@
-#dummy files database.py
+from sqlmodel import SQLModel, create_engine
+from app.models import *
 
-from sqlalchemy import create_engine
-from app.models.models import Base
-
-engine = create_engine("sqlite:///todos.db")
-
+engine = create_engine("sqlite:///database.db", echo=True)
 
 def init_db():
-    Base.metadata.create_all(engine)
+    SQLModel.metadata.create_all(engine)
