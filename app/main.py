@@ -1,12 +1,15 @@
 import sys
 import os
+
+from app.database.seeder.seed_users import *
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from nicegui import ui
 from app.database.database import init_db
-from app.ui.ui import todo_page
+import app.ui.ui  # wichtig: nur importieren, damit die @ui.page-Routen registriert werden
 
 if __name__ in {"__main__", "__mp_main__"}:
     init_db()
-    todo_page()
-    ui.run()
+    seed_users()  # Füge Test-User zur Datenbank hinzu
+    run_seed()
+    ui.run(storage_secret="mein-geheimes-passwort")

@@ -3,18 +3,12 @@ from app.models.user import User
 
 
 # Happy Path: Ein Benutzer wird erfolgreich gespeichert
-def test_save_user_sets_id(session):
+def test_save_user_sets_id(session, sample_user):
     # Arrange
     user_handler = UserHandler(session)
-    user = User(
-        firstname="Wathanak",
-        lastname="Deng",
-        email="wathanak.deng@example.com",
-        password_hash=User.hash_password("password123"),
-    )
 
     # Act
-    saved_user = user_handler.save(user)
+    saved_user = user_handler.save(sample_user)
 
     # Assert
     assert saved_user.id is not None

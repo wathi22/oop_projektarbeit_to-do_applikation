@@ -43,6 +43,52 @@ def sample_todo_list(session, sample_user):
     session.refresh(todo_list)
     return todo_list
 
+@pytest.fixture
+def sample_todo_list_with_todos(session, sample_user):
+    todo_List = TodoList(
+        name="Studium", 
+        owner_id=sample_user.id,
+    )
+    session.add(todo_List)
+    session.commit()
+    session.refresh(todo_List)
+
+    todos = [
+        Todo(
+            title="ORM lernen",
+            description="SQLModel und Handler verstehen",
+            priority=PRIORITY_HIGH,
+            status=STATUS_BACKLOG,
+            progress=0,
+            labels="studium,python",
+            todo_list_id=todo_List.id,
+        ),
+        Todo(
+            title="Python üben",
+            description="Übungsaufgaben lösen",
+            priority=PRIORITY_HIGH,
+            status=STATUS_BACKLOG,
+            progress=0,
+            labels="studium,python",
+            todo_list_id=todo_List.id,
+        ),
+        Todo(
+            title="Docker kennenlernen",
+            description="Docker Grundlagen verstehen",
+            priority=PRIORITY_HIGH,
+            status=STATUS_BACKLOG,
+            progress=0,
+            labels="studium,docker",
+            todo_list_id=todo_List.id,
+        ),
+    ]
+
+    for todo in todos:
+        session.add(todo)
+
+    session.commit()
+    return todo_List
+
 
 @pytest.fixture
 def sample_todo(session, sample_todo_list):

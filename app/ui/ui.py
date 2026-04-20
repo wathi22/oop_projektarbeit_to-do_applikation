@@ -1,57 +1,274 @@
-#dummy-files_for_ui
+from datetime import date
+from nicegui import ui, app
+from sqlmodel import Session
 
-from nicegui import ui
+from app.database.database import engine
+from app.services.UserHandler import UserHandler
 from app.services.TodoListHandler import TodoListHandler
-from app.models.models import Todo
+from app.services.TodoHandler import TodoHandler
 
+from app.models.todo import (
+    Todo,
+    STATUS_BACKLOG,
+    STATUS_DONE,
+    PRIORITY_LOW,
+    PRIORITY_MEDIUM,
+    PRIORITY_HIGH,
+    PRIORITY_CRITICAL,
+)
+
+
+def get_current_user_id() -> int | None:
+    return app.storage.user.get("user_id")
+
+
+def logout() -> None:
+    app.storage.user.clear()
+    ui.navigate.to("/login")
+
+
+@ui.page("/")
+def index_page():
+    ui.navigate.to("/login")
+
+
+@ui.page("/login")
+def login_page():
+    if get_current_user_id() is not None:
+        ui.navigate.to("/todos")
+        return
+
+    with ui.column().classes("w-full items-center justify-center mt-20 gap-4"):
+        ui.label("Login").classes("text-3xl font-bold")
+
+        email_input = ui.input("E-Mail").classes("w-96")
+        password_input = ui.input(
+            "Passwort",
+            password=True,
+            password_toggle_button=True,
+        ).classes("w-96")
+
+        def login():
+            email = (email_input.value or "").strip()
+            password = password_input.value or ""
+
+            if not email or not password:
+                ui.notify("Bitte E-Mail und Passwort eingeben", color="warning")
+                return
+
+            with Session(engine) as session:
+                user_handler = UserHandler(session)
+                user = user_handler.get_by_email(email)
+
+            if user is None:
+                ui.notify("Benutzer nicht gefunden", color="negative")
+                return
+
+            if not user.check_password(password):
+                ui.notify("Falsches Passwort", color="negative")
+                return
+
+            app.storage.user["user_id"] = user.id
+            ui.notify("Login erfolgreich", color="positive")
+            ui.navigate.to("/todos")
+
+        ui.button("Einloggen", on_click=login).classes("w-96")
+
+
+@ui.page("/todos")
 def todo_page():
-    handler = TodoListHandler()
+    user_id = get_current_user_id()
+    if user_id is None:
+        ui.navigate.to("/login")
+        return
 
-    with ui.column().classes("items-center gap-4"):
-        ui.label("To-Do List").classes("text-2xl font-bold")
-        with ui.row().classes("gap-2"):
-            description_input = ui.input("Description").classes("w-full")
-            priority_input = ui.select(["Low", "Medium", "High"], label="Priority").classes("w-full")
-            due_date_input = ui.input("Due Date (YYYY-MM-DD)").classes("w-full")
-            add_button = ui.button("Add").classes("w-full")
+    selected_list_id = {"value": None}
+    todo_list_column = ui.column()
+    todo_column = ui.column()
 
-        todo_list_container = ui.column().classes("w-full gap-2")
+    def refresh_lists():
+        todo_list_column.clear()
 
-    def refresh_todo_list():
-        todo_list_container.clear()
-        todos = handler.get_all()
-        for todo in todos:
-            with todo_list_container:
-                with ui.row().classes("gap-2 items-center"):
-                    is_done = todo.status == "erledigt"
-                    ui.label(todo.description).classes("flex-1 line-through text-gray-400" if is_done else "flex-1")
-                    ui.label(todo.priority).classes("w-24 text-center")
-                    ui.label(todo.due_date).classes("w-32 text-center")
-                    ui.label(todo.status).classes("w-24 text-center text-green-600" if is_done else "w-24 text-center text-yellow-600")
-                    toggle_button = ui.button("✓ Erledigt" if not is_done else "↩ Offen").classes("w-28")
-                    toggle_button.on_click(lambda id=todo.id: toggle_status(id))
-                    delete_button = ui.button("Delete").classes("w-20")
-                    delete_button.on_click(lambda id=todo.id: delete_todo(id))
+        with Session(engine) as session:
+            todo_list_handler = TodoListHandler(session)
+            todo_lists = todo_list_handler.get_lists_for_user(user_id)
 
-    def add_todo():
-        description = description_input.value
+        with todo_list_column:
+            ui.label("Meine Listen").classes("text-xl font-bold")
+
+            for todo_list in todo_lists:
+                with ui.row().classes("w-full items-center gap-2"):
+                    ui.button(
+                        todo_list.name,
+                        on_click=lambda todo_list_id=todo_list.id: select_list(todo_list_id),
+                    ).classes("flex-1")
+
+                    ui.button(
+                        "Löschen",
+                        on_click=lambda todo_list_id=todo_list.id: delete_list(todo_list_id),
+                    ).props("color=negative")
+
+    def refresh_todos():
+        todo_column.clear()
+
+        if selected_list_id["value"] is None:
+            with todo_column:
+                ui.label("Bitte zuerst eine Liste auswählen.").classes("text-gray-500")
+            return
+
+        with Session(engine) as session:
+            todo_handler = TodoHandler(session)
+            todos = todo_handler.get_todos_for_list(selected_list_id["value"])
+
+        with todo_column:
+            ui.label("Todos").classes("text-xl font-bold")
+
+            for todo in todos:
+                is_done = todo.status == STATUS_DONE
+
+                with ui.card().classes("w-full"):
+                    with ui.row().classes("w-full items-center justify-between"):
+                        with ui.column().classes("flex-1"):
+                            ui.label(todo.title).classes(
+                                "text-lg font-semibold line-through text-gray-400"
+                                if is_done else "text-lg font-semibold"
+                            )
+                            ui.label(todo.description or "-").classes("text-sm text-gray-500")
+                            ui.label(f"Priorität: {todo.priority}")
+                            ui.label(f"Fällig: {todo.due_date or '-'}")
+                            ui.label(f"Status: {todo.status}")
+                            ui.label(f"Fortschritt: {todo.progress}%")
+
+                        with ui.column().classes("gap-2"):
+                            ui.button(
+                                "Status wechseln",
+                                on_click=lambda todo_id=todo.id: toggle_status(todo_id),
+                            )
+                            ui.button(
+                                "Löschen",
+                                on_click=lambda todo_id=todo.id: delete_todo(todo_id),
+                            ).props("color=negative")
+
+    def select_list(todo_list_id: int):
+        selected_list_id["value"] = todo_list_id
+        refresh_todos()
+
+    def add_list(name_input):
+        name = (name_input.value or "").strip()
+
+        if not name:
+            ui.notify("Bitte einen Listennamen eingeben", color="warning")
+            return
+
+        with Session(engine) as session:
+            todo_list_handler = TodoListHandler(session)
+            todo_list_handler.create_list(user_id, name)
+
+        name_input.value = ""
+        refresh_lists()
+
+    def delete_list(todo_list_id: int):
+        with Session(engine) as session:
+            todo_list_handler = TodoListHandler(session)
+            todo_list_handler.delete(todo_list_id)
+
+        if selected_list_id["value"] == todo_list_id:
+            selected_list_id["value"] = None
+
+        refresh_lists()
+        refresh_todos()
+
+    def add_todo(title_input, description_input, priority_input, due_date_input):
+        if selected_list_id["value"] is None:
+            ui.notify("Bitte zuerst eine Liste auswählen", color="warning")
+            return
+
+        title = (title_input.value or "").strip()
+        description = (description_input.value or "").strip()
         priority = priority_input.value
-        due_date = due_date_input.value
-        if description and priority and due_date:
-            new_todo = Todo(description=description, priority=priority, due_date=due_date)
-            handler.save(new_todo)
-            refresh_todo_list()
-            description_input.value = ""
-            priority_input.value = None
-            due_date_input.value = ""
+        due_date_raw = (due_date_input.value or "").strip()
+
+        if not title:
+            ui.notify("Bitte einen Titel eingeben", color="warning")
+            return
+
+        parsed_due_date = None
+        if due_date_raw:
+            try:
+                parsed_due_date = date.fromisoformat(due_date_raw)
+            except ValueError:
+                ui.notify("Datum muss im Format YYYY-MM-DD sein", color="negative")
+                return
+
+        new_todo = Todo(
+            title=title,
+            description=description,
+            priority=priority or PRIORITY_MEDIUM,
+            status=STATUS_BACKLOG,
+            progress=0,
+            due_date=parsed_due_date,
+            todo_list_id=selected_list_id["value"],
+        )
+
+        with Session(engine) as session:
+            todo_handler = TodoHandler(session)
+            todo_handler.save(new_todo)
+
+        title_input.value = ""
+        description_input.value = ""
+        priority_input.value = PRIORITY_MEDIUM
+        due_date_input.value = ""
+        refresh_todos()
 
     def toggle_status(todo_id: int):
-        handler.toggle_status(todo_id)
-        refresh_todo_list()
+        with Session(engine) as session:
+            todo_handler = TodoHandler(session)
+            todo_handler.toggle_status(todo_id)
+
+        refresh_todos()
 
     def delete_todo(todo_id: int):
-        handler.delete(todo_id)
-        refresh_todo_list()
+        with Session(engine) as session:
+            todo_handler = TodoHandler(session)
+            todo_handler.delete(todo_id)
 
-    add_button.on_click(add_todo)
-    refresh_todo_list()
+        refresh_todos()
+
+    with ui.column().classes("w-full p-6 gap-6"):
+        with ui.row().classes("w-full items-center justify-between"):
+            ui.label("To-Do App").classes("text-3xl font-bold")
+            ui.button("Logout", on_click=logout).props("color=negative")
+
+        with ui.row().classes("w-full gap-6 items-start"):
+            with ui.card().classes("w-80"):
+                new_list_input = ui.input("Neue Liste").classes("w-full")
+                ui.button(
+                    "Liste hinzufügen",
+                    on_click=lambda: add_list(new_list_input),
+                ).classes("w-full")
+                todo_list_column.classes("w-full gap-2")
+
+            with ui.card().classes("flex-1"):
+                title_input = ui.input("Titel").classes("w-full")
+                description_input = ui.input("Beschreibung").classes("w-full")
+                priority_input = ui.select(
+                    [PRIORITY_LOW, PRIORITY_MEDIUM, PRIORITY_HIGH, PRIORITY_CRITICAL],
+                    label="Priorität",
+                    value=PRIORITY_MEDIUM,
+                ).classes("w-full")
+                due_date_input = ui.input("Fälligkeitsdatum (YYYY-MM-DD)").classes("w-full")
+
+                ui.button(
+                    "Todo hinzufügen",
+                    on_click=lambda: add_todo(
+                        title_input,
+                        description_input,
+                        priority_input,
+                        due_date_input,
+                    ),
+                ).classes("w-full")
+
+                todo_column.classes("w-full gap-3 mt-4")
+
+    refresh_lists()
+    refresh_todos()

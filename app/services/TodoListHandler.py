@@ -8,11 +8,12 @@ class TodoListHandler:
         self.session = session
 
     def save(self, todo_list: TodoList) -> TodoList:
-        self.session.add(todo_list)
-        self.session.commit()
-        self.session.refresh(todo_list)
+        self.session.add(todo_list)             # Hinzufügen des TodoList-Objekts zur Session   
+        self.session.commit()                   # Speichern der Änderungen in der Datenbank
+        self.session.refresh(todo_list)         # Aktualisieren des TodoList-Objekts mit den Daten aus der Datenbank (z.B. ID)
         return todo_list
 
+# Löschen einer To-Do-Liste anhand ihrer ID
     def delete(self, todo_list_id: int) -> bool:
         todo_list = self.session.get(TodoList, todo_list_id)
         if not todo_list:
@@ -22,12 +23,15 @@ class TodoListHandler:
         self.session.commit()
         return True
 
+# Abrufen einer To-Do-Liste anhand ihrer ID
     def get_by_id(self, todo_list_id: int) -> Optional[TodoList]:
         return self.session.get(TodoList, todo_list_id)
 
+    # Abrufen aller To-Do-Listen aus der Datenbank
     def get_all(self) -> list[TodoList]:
         return self.session.exec(select(TodoList)).all()
 
+    # Aktualisieren einer To-Do-Liste anhand ihrer ID und optionaler Felder
     def update(
         self,
         todo_list_id: int,
@@ -47,10 +51,12 @@ class TodoListHandler:
         self.session.refresh(todo_list)
         return todo_list
 
+    # Abrufen aller To-Do-Listen eines bestimmten Benutzers anhand seiner ID
     def get_lists_for_user(self, user_id: int) -> list[TodoList]:
         statement = select(TodoList).where(TodoList.owner_id == user_id)
         return self.session.exec(statement).all()
 
+    # Erstellen einer neuen To-Do-Liste für einen bestimmten Benutzer
     def create_list(self, user_id: int, name: str) -> TodoList:
         new_todo_list = TodoList(name=name, owner_id=user_id)
         self.session.add(new_todo_list)
