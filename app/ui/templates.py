@@ -1,30 +1,35 @@
-LOGO_SVG = """<svg width="22" height="22" viewBox="0 0 20 20" fill="none">
-  <rect x="1" y="1" width="8" height="8" rx="2" fill="currentColor"/>
-  <rect x="11" y="1" width="8" height="8" rx="2" fill="currentColor" opacity=".6"/>
-  <rect x="1" y="11" width="8" height="8" rx="2" fill="currentColor" opacity=".6"/>
-  <rect x="11" y="11" width="8" height="8" rx="2" fill="currentColor" opacity=".3"/>
+LOGO_SVG = """<svg width="52" height="32" viewBox="0 0 52 32" xmlns="http://www.w3.org/2000/svg">
+  <rect width="52" height="32" rx="4" fill="#fbd100"/>
+  <text x="5" y="25" font-family="Impact,Arial Black,sans-serif" font-size="22" font-weight="900" fill="#000">n</text>
+  <line x1="26" y1="5" x2="26" y2="27" stroke="#000" stroke-width="1.3"/>
+  <text x="29" y="25" font-family="Georgia,Times New Roman,serif" font-size="22" font-style="italic" font-weight="700" fill="#000">w</text>
 </svg>"""
 
 LOGIN_HTML = """
 <div style="min-height:100vh;width:100%;display:flex;align-items:center;justify-content:center;background:var(--bg);font-family:var(--font)">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:36px;width:100%;max-width:380px;box-shadow:var(--shadow-md)">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:36px;width:100%;max-width:420px;box-shadow:var(--shadow-md)">
 
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:32px;color:var(--accent)">
-      <svg width="26" height="26" viewBox="0 0 20 20" fill="none">
-        <rect x="1" y="1" width="8" height="8" rx="2" fill="currentColor"/>
-        <rect x="11" y="1" width="8" height="8" rx="2" fill="currentColor" opacity=".6"/>
-        <rect x="1" y="11" width="8" height="8" rx="2" fill="currentColor" opacity=".6"/>
-        <rect x="11" y="11" width="8" height="8" rx="2" fill="currentColor" opacity=".3"/>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:32px">
+      <svg width="68" height="42" viewBox="0 0 68 42" xmlns="http://www.w3.org/2000/svg">
+        <rect width="68" height="42" rx="5" fill="#fbd100"/>
+        <text x="6" y="32" font-family="Impact,Arial Black,sans-serif" font-size="28" font-weight="900" fill="#000">n</text>
+        <line x1="34" y1="7" x2="34" y2="35" stroke="#000" stroke-width="1.5"/>
+        <text x="38" y="32" font-family="Georgia,Times New Roman,serif" font-size="28" font-style="italic" font-weight="700" fill="#000">w</text>
       </svg>
-      <span style="font-size:18px;font-weight:600;letter-spacing:-.3px">TaskFlow</span>
+      <div>
+        <div style="font-size:17px;font-weight:700;letter-spacing:-.2px;color:var(--text)">ToDoList</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">OOP Projektarbeit</div>
+      </div>
     </div>
 
-    <h1 style="font-size:20px;font-weight:600;margin-bottom:5px;letter-spacing:-.4px;color:var(--text)">Willkommen zurück</h1>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:26px">Melde dich an, um fortzufahren</p>
+    <h1 style="font-size:22px;font-weight:700;margin-bottom:6px;letter-spacing:-.3px;color:var(--text)">Anmeldung</h1>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:26px">
+      Projektarbeitsraum für das Modul Objektorientierte Programmierung
+    </p>
 
     <div class="fg">
       <label class="fl">E-Mail</label>
-      <input class="fi" type="email" id="login-email" placeholder="name@beispiel.de" autocomplete="email"
+      <input class="fi" type="email" id="login-email" placeholder="name@beispiel.ch" autocomplete="email"
              onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()">
     </div>
     <div class="fg">
@@ -33,7 +38,7 @@ LOGIN_HTML = """
              onkeydown="if(event.key==='Enter')doLogin()">
     </div>
 
-    <div id="login-error" style="display:none;padding:10px 12px;background:var(--danger-lt);color:var(--danger);border-radius:var(--r-sm);font-size:13px;margin-bottom:16px;border:1px solid rgba(224,36,36,.15)"></div>
+    <div id="login-error" style="display:none;padding:10px 12px;background:var(--danger-lt);color:var(--danger);border-radius:var(--r-sm);font-size:13px;margin-bottom:16px;border:1px solid rgba(180,73,73,.18)"></div>
 
     <button class="btn btn-accent" id="login-btn" style="width:100%;justify-content:center;padding:10px 16px;font-size:14px"
             onclick="doLogin()">
@@ -41,7 +46,7 @@ LOGIN_HTML = """
     </button>
 
     <p style="text-align:center;margin-top:22px;font-size:13px;color:var(--text2)">
-      Noch kein Konto? <a href="/register" style="color:var(--accent);font-weight:500">Registrieren</a>
+      Noch kein Konto? <a href="/register" style="color:var(--accent);font-weight:600">Registrieren</a>
     </p>
   </div>
 </div>
@@ -93,20 +98,25 @@ window.showLoginError = function(msg) {
 
 REGISTER_HTML = """
 <div style="min-height:100vh;width:100%;display:flex;align-items:center;justify-content:center;background:var(--bg);font-family:var(--font);padding:24px 0">
-  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:36px;width:100%;max-width:420px;box-shadow:var(--shadow-md)">
+  <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--r-lg);padding:36px;width:100%;max-width:450px;box-shadow:var(--shadow-md)">
 
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:32px;color:var(--accent)">
-      <svg width="26" height="26" viewBox="0 0 20 20" fill="none">
-        <rect x="1" y="1" width="8" height="8" rx="2" fill="currentColor"/>
-        <rect x="11" y="1" width="8" height="8" rx="2" fill="currentColor" opacity=".6"/>
-        <rect x="1" y="11" width="8" height="8" rx="2" fill="currentColor" opacity=".6"/>
-        <rect x="11" y="11" width="8" height="8" rx="2" fill="currentColor" opacity=".3"/>
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:32px">
+      <svg width="68" height="42" viewBox="0 0 68 42" xmlns="http://www.w3.org/2000/svg">
+        <rect width="68" height="42" rx="5" fill="#fbd100"/>
+        <text x="6" y="32" font-family="Impact,Arial Black,sans-serif" font-size="28" font-weight="900" fill="#000">n</text>
+        <line x1="34" y1="7" x2="34" y2="35" stroke="#000" stroke-width="1.5"/>
+        <text x="38" y="32" font-family="Georgia,Times New Roman,serif" font-size="28" font-style="italic" font-weight="700" fill="#000">w</text>
       </svg>
-      <span style="font-size:18px;font-weight:600;letter-spacing:-.3px">TaskFlow</span>
+      <div>
+        <div style="font-size:17px;font-weight:700;letter-spacing:-.2px;color:var(--text)">ToDoList</div>
+        <div style="font-size:11px;color:var(--text3);margin-top:2px">OOP Projektarbeit</div>
+      </div>
     </div>
 
-    <h1 style="font-size:20px;font-weight:600;margin-bottom:5px;letter-spacing:-.4px;color:var(--text)">Konto erstellen</h1>
-    <p style="font-size:13px;color:var(--text2);margin-bottom:26px">Kostenlos registrieren und loslegen</p>
+    <h1 style="font-size:22px;font-weight:700;margin-bottom:6px;letter-spacing:-.3px;color:var(--text)">Registrierung</h1>
+    <p style="font-size:13px;color:var(--text2);margin-bottom:26px">
+      Zugang zur Testumgebung für den Projektarbeitsraum erstellen
+    </p>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:13px">
       <div class="fg">
@@ -118,21 +128,24 @@ REGISTER_HTML = """
         <input class="fi" type="text" id="reg-lastname" placeholder="Muster" autocomplete="family-name">
       </div>
     </div>
+
     <div class="fg">
       <label class="fl">E-Mail</label>
-      <input class="fi" type="email" id="reg-email" placeholder="name@beispiel.de" autocomplete="email">
+      <input class="fi" type="email" id="reg-email" placeholder="name@beispiel.ch" autocomplete="email">
     </div>
+
     <div class="fg">
       <label class="fl">Passwort</label>
       <input class="fi" type="password" id="reg-password" placeholder="Mindestens 8 Zeichen" autocomplete="new-password">
     </div>
+
     <div class="fg">
       <label class="fl">Passwort wiederholen</label>
       <input class="fi" type="password" id="reg-password2" placeholder="Passwort bestätigen" autocomplete="new-password"
              onkeydown="if(event.key==='Enter')doRegister()">
     </div>
 
-    <div id="reg-error" style="display:none;padding:10px 12px;background:var(--danger-lt);color:var(--danger);border-radius:var(--r-sm);font-size:13px;margin-bottom:16px;border:1px solid rgba(224,36,36,.15)"></div>
+    <div id="reg-error" style="display:none;padding:10px 12px;background:var(--danger-lt);color:var(--danger);border-radius:var(--r-sm);font-size:13px;margin-bottom:16px;border:1px solid rgba(180,73,73,.18)"></div>
 
     <button class="btn btn-accent" id="reg-btn" style="width:100%;justify-content:center;padding:10px 16px;font-size:14px"
             onclick="doRegister()">
@@ -140,7 +153,7 @@ REGISTER_HTML = """
     </button>
 
     <p style="text-align:center;margin-top:22px;font-size:13px;color:var(--text2)">
-      Bereits ein Konto? <a href="/login" style="color:var(--accent);font-weight:500">Einloggen</a>
+      Bereits registriert? <a href="/login" style="color:var(--accent);font-weight:600">Einloggen</a>
     </p>
   </div>
 </div>
@@ -201,20 +214,20 @@ window.showRegError = function(msg) {
 """
 
 TODO_APP_HTML = """
-<div id="taskflow-app">
+<div id="fhnw-todolist-app">
 
   <aside id="sidebar">
     <div class="sb-logo">
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
-        <rect x="1" y="1" width="8" height="8" rx="2" fill="currentColor"/>
-        <rect x="11" y="1" width="8" height="8" rx="2" fill="currentColor" opacity=".6"/>
-        <rect x="1" y="11" width="8" height="8" rx="2" fill="currentColor" opacity=".6"/>
-        <rect x="11" y="11" width="8" height="8" rx="2" fill="currentColor" opacity=".3"/>
+      <svg width="46" height="28" viewBox="0 0 46 28" xmlns="http://www.w3.org/2000/svg">
+        <rect width="46" height="28" rx="3" fill="#fbd100"/>
+        <text x="4" y="22" font-family="Impact,Arial Black,sans-serif" font-size="19" font-weight="900" fill="#000">n</text>
+        <line x1="23" y1="5" x2="23" y2="23" stroke="#000" stroke-width="1.2"/>
+        <text x="26" y="22" font-family="Georgia,Times New Roman,serif" font-size="19" font-style="italic" font-weight="700" fill="#000">w</text>
       </svg>
-      TaskFlow
+      <span style="color:var(--text);font-weight:700;font-size:13px">ToDoList</span>
     </div>
 
-    <div class="sb-sec">Ansichten</div>
+    <div class="sb-sec">Arbeitsbereich</div>
     <div class="sb-item" id="sb-board" onclick="setView('board')">
       <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="1" width="5" height="13" rx="1.5" stroke="currentColor" stroke-width="1.4"/><rect x="9" y="1" width="5" height="9" rx="1.5" stroke="currentColor" stroke-width="1.4"/></svg>
       Board
@@ -233,17 +246,17 @@ TODO_APP_HTML = """
     </div>
     <div class="sb-item" id="sb-dashboard" onclick="setView('dashboard')">
       <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><rect x="1" y="8" width="3.5" height="6" rx="1" fill="currentColor" opacity=".7"/><rect x="5.75" y="5" width="3.5" height="9" rx="1" fill="currentColor" opacity=".7"/><rect x="10.5" y="1" width="3.5" height="13" rx="1" fill="currentColor" opacity=".7"/></svg>
-      Dashboard
+      Projektstatus
     </div>
 
-    <div class="sb-sec">Listen</div>
+    <div class="sb-sec">Projektlisten</div>
     <div id="sb-lists"></div>
 
     <div class="sb-fill"></div>
     <div class="sb-bottom">
       <div class="sb-item" onclick="toggleAI()">
         <svg width="15" height="15" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 6.5C5.5 5.4 6.4 4.5 7.5 4.5s2 .9 2 2c0 .9-.5 1.6-1.3 1.9L8 10H7L6.7 8.4C6 8.1 5.5 7.4 5.5 6.5Z" fill="currentColor"/><circle cx="7.5" cy="11.5" r=".9" fill="currentColor"/></svg>
-        KI-Assistent
+        KI-Hilfe
       </div>
       <div class="sb-item" onclick="toggleDark()">
         <svg id="dark-ico" width="15" height="15" viewBox="0 0 15 15" fill="none"><path d="M7.5 1a6.5 6.5 0 1 0 6.5 6.5A6.5 6.5 0 0 0 7.5 1Zm0 11.5A5 5 0 1 1 12.5 7.5 5 5 0 0 1 7.5 12.5Z" fill="currentColor" opacity=".4"/><path d="M7.5 3v9a4.5 4.5 0 0 0 0-9Z" fill="currentColor"/></svg>
@@ -264,33 +277,44 @@ TODO_APP_HTML = """
         <button class="btn btn-icon" id="menu-btn" onclick="toggleSidebar()" style="display:none">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><line x1="2" y1="5" x2="14" y2="5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="2" y1="8" x2="14" y2="8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><line x1="2" y1="11" x2="14" y2="11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
         </button>
-        <span class="proj-title" id="topbar-title">TaskFlow</span>
+
+        <div style="display:flex;flex-direction:column;gap:2px">
+          <span style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em">Prototyp · Testumgebung</span>
+          <span class="proj-title" id="topbar-title">FHNW ToDoList</span>
+        </div>
+
         <div class="sp"></div>
-        <input class="sbox" id="srch" placeholder="Suchen…" oninput="S.query=this.value;render()">
+
+        <input class="sbox" id="srch" placeholder="Aufgaben suchen…" oninput="S.query=this.value;render()">
+
         <select class="sel" style="width:auto" onchange="S.filterPriority=this.value;render()">
-          <option value="all">Alle</option>
+          <option value="all">Alle Prioritäten</option>
           <option value="critical">Kritisch</option>
           <option value="high">Hoch</option>
           <option value="medium">Mittel</option>
           <option value="low">Niedrig</option>
         </select>
-        <button class="btn" onclick="toggleAI()" title="KI-Assistent">
+
+        <button class="btn" onclick="toggleAI()" title="KI-Hilfe">
           <svg width="14" height="14" viewBox="0 0 15 15" fill="none"><circle cx="7.5" cy="7.5" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 6.5C5.5 5.4 6.4 4.5 7.5 4.5s2 .9 2 2c0 .9-.5 1.6-1.3 1.9L8 10H7L6.7 8.4C6 8.1 5.5 7.4 5.5 6.5Z" fill="currentColor"/><circle cx="7.5" cy="11.5" r=".9" fill="currentColor"/></svg>
           <span>KI</span>
         </button>
+
         <button class="btn btn-accent" onclick="openModal(null)">
-          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><line x1="6.5" y1="1" x2="6.5" y2="12" stroke="white" stroke-width="1.6" stroke-linecap="round"/><line x1="1" y1="6.5" x2="12" y2="6.5" stroke="white" stroke-width="1.6" stroke-linecap="round"/></svg>
-          <span>Aufgabe</span>
+          <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><line x1="6.5" y1="1" x2="6.5" y2="12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><line x1="1" y1="6.5" x2="12" y2="6.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <span>Neue Aufgabe</span>
         </button>
       </div>
+
       <div class="tb2" id="vtabs">
         <div class="vtab active" data-v="board" onclick="setView('board')">Board</div>
         <div class="vtab" data-v="list" onclick="setView('list')">Liste</div>
         <div class="vtab" data-v="gantt" onclick="setView('gantt')">Zeitplan</div>
         <div class="vtab" data-v="calendar" onclick="setView('calendar')">Kalender</div>
-        <div class="vtab" data-v="dashboard" onclick="setView('dashboard')">Dashboard</div>
+        <div class="vtab" data-v="dashboard" onclick="setView('dashboard')">Projektstatus</div>
       </div>
     </div>
+
     <div id="content"></div>
   </div>
 
@@ -302,25 +326,29 @@ TODO_APP_HTML = """
     <div class="ai-hdr">
       <div style="display:flex;align-items:center;gap:8px">
         <svg width="16" height="16" viewBox="0 0 15 15" fill="none" style="color:var(--accent)"><circle cx="7.5" cy="7.5" r="6" stroke="currentColor" stroke-width="1.4"/><path d="M5.5 6.5C5.5 5.4 6.4 4.5 7.5 4.5s2 .9 2 2c0 .9-.5 1.6-1.3 1.9L8 10H7L6.7 8.4C6 8.1 5.5 7.4 5.5 6.5Z" fill="currentColor"/><circle cx="7.5" cy="11.5" r=".9" fill="currentColor"/></svg>
-        KI-Assistent
+        KI-Hilfe
       </div>
       <button class="btn btn-sm" onclick="toggleAI()">✕</button>
     </div>
+
     <div class="ai-key-row">
-      <div style="font-size:11.5px;color:var(--text2);margin-bottom:5px;font-weight:500">Anthropic API Key</div>
+      <div style="font-size:11.5px;color:var(--text2);margin-bottom:5px;font-weight:600">Anthropic API Key (optional, nur Testzweck)</div>
       <input class="ai-key-inp" type="password" id="ai-key-in" placeholder="sk-ant-…" oninput="saveApiKey(this.value)">
     </div>
+
     <div class="ai-quick">
       <button class="ai-qb" onclick="aiAsk('Analysiere die Aufgaben und schlage Priorisierungen vor.')">Priorisieren</button>
       <button class="ai-qb" onclick="aiAsk('Welche Aufgaben sind überfällig oder gefährdet?')">Risiken</button>
-      <button class="ai-qb" onclick="aiAsk('Erstelle eine kurze Projektzusammenfassung.')">Status</button>
-      <button class="ai-qb" onclick="aiAsk('Gib mir Produktivitätstipps.')">Tipps</button>
+      <button class="ai-qb" onclick="aiAsk('Erstelle eine kurze Projektübersicht.')">Status</button>
+      <button class="ai-qb" onclick="aiAsk('Gib Verbesserungsvorschläge für die Projektorganisation.')">Tipps</button>
     </div>
+
     <div class="ai-msgs" id="ai-msgs"></div>
+
     <div class="ai-in-row">
-      <input class="ai-in" id="ai-in" placeholder="Frage stellen…" onkeydown="if(event.key==='Enter')aiSend()">
+      <input class="ai-in" id="ai-in" placeholder="Frage zur Projektarbeit stellen…" onkeydown="if(event.key==='Enter')aiSend()">
       <button class="btn btn-accent" onclick="aiSend()">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7L13 1L7 13L6 8L1 7Z" stroke="white" stroke-width="1.4" stroke-linejoin="round"/></svg>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M1 7L13 1L7 13L6 8L1 7Z" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/></svg>
       </button>
     </div>
   </div>
@@ -345,7 +373,7 @@ TODO_APP_HTML = """
       </div>
       <div class="mnav-item" id="mn-dashboard" onclick="setView('dashboard')">
         <svg width="18" height="18" viewBox="0 0 15 15" fill="none"><rect x="1" y="8" width="3.5" height="6" rx="1" fill="currentColor" opacity=".7"/><rect x="5.75" y="5" width="3.5" height="9" rx="1" fill="currentColor" opacity=".7"/><rect x="10.5" y="1" width="3.5" height="13" rx="1" fill="currentColor" opacity=".7"/></svg>
-        <span>Stats</span>
+        <span>Status</span>
       </div>
     </div>
   </nav>
@@ -356,8 +384,19 @@ TODO_APP_HTML = """
 TODO_APP_JS = """
 const TODAY = new Date();
 const TODAY_STR = TODAY.toISOString().split('T')[0];
-const AV_CLR = {MH:'#4361EE',JF:'#7C3AED',AB:'#D85A30',LK:'#0E9F6E',TS:'#C27803'};
-const BCKT_CLR = {Backlog:'#8B949E','To-Do':'#4361EE','In Progress':'#C27803',Done:'#0E9F6E'};
+const AV_CLR = {
+  MH:'#767573',
+  JF:'#4c4c4c',
+  AB:'#999999',
+  LK:'#5E5A54',
+  TS:'#8a8a8a'
+};
+const BCKT_CLR = {
+  Backlog:'#767573',
+  'To-Do':'#000000',
+  'In Progress':'#A67C00',
+  Done:'#6B8E73'
+};
 const BCKT_DOT = {Backlog:'#9DA8C0','To-Do':'#4361EE','In Progress':'#F59E0B',Done:'#10B981'};
 const PRIO_LBL = {low:'Niedrig',medium:'Mittel',high:'Hoch',critical:'Kritisch'};
 const LIST_COLORS = ['#4361EE','#7C3AED','#0E9F6E','#C27803','#D85A30','#E91E63','#0284C7','#7C2D12'];
@@ -907,7 +946,7 @@ function setupResponsive() {
 }
 
 function initApp() {
-  if (!document.getElementById('taskflow-app')) {
+  if (!document.getElementById('fhnw-todolist-app')) {
     setTimeout(initApp, 50);
     return;
   }
