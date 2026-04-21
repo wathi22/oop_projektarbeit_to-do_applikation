@@ -1,8 +1,9 @@
 import sys
 import os
 
-from app.database.seeder.seed_users import *
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from app.database.seeder.seed_users import *
 
 from nicegui import ui
 from app.database.database import init_db

@@ -4,49 +4,26 @@ from app.models.user import User
 
 
 def seed_users():
+    users_to_seed = [
+        {"firstname": "Wathanak", "lastname": "Deng", "email": "wathanak.deng@example.com"},
+        {"firstname": "Matthias", "lastname": "Heiniger", "email": "matthias.heiniger@example.com"},
+        {"firstname": "Joel", "lastname": "Fehr", "email": "joel.fehr@example.com"},
+    ]
+
     with Session(engine) as session:
+        for data in users_to_seed:
+            exists = session.exec(select(User).where(User.email == data["email"])).first()
+            if not exists:
+                session.add(User(
+                    firstname=data["firstname"],
+                    lastname=data["lastname"],
+                    email=data["email"],
+                    password_hash=User.hash_password("password123"),
+                ))
 
-        # --- USER 1 ---
-        user1_email = "wathanak.deng@example.com"
-        existing_user1 = session.exec(
-            select(User).where(User.email == user1_email)
-        ).first()
-
-        if not existing_user1:
-            user1 = User(
-                firstname="Wathanak",
-                lastname="Deng",
-                email=user1_email,
-                password_hash=User.hash_password("password123"),
-            )
-            session.add(user1)
-            print("User 1 erstellt")
-        else:
-            print("User 1 existiert bereits")
-
-        # --- USER 2 ---
-        user2_email = "matthias.heiniger@example.com"
-        existing_user2 = session.exec(
-            select(User).where(User.email == user2_email)
-        ).first()
-
-        if not existing_user2:
-            user2 = User(
-                firstname="Matthias",
-                lastname="Heiniger",
-                email=user2_email,
-                password_hash=User.hash_password("password123"),
-            )
-            session.add(user2)
-            print("User 2 erstellt")
-        else:
-            print("User 2 existiert bereits")
-
-        # EIN commit am Ende (besser!)
         session.commit()
+        print("Users erstellt")
 
 
 def run_seed():
-    print("Starte Seeder...")
     seed_users()
-    print("Seeder fertig")

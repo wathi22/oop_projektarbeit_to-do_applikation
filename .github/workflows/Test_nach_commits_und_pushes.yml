@@ -1,4 +1,4 @@
-name: Tests
+name: Test nach commits und pushes
 
 on:
   push:

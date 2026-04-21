@@ -1,326 +1,323 @@
+import uuid
+import json
 from datetime import date
-from nicegui import ui, app
+
+from fastapi import Request, Response
+from fastapi.responses import HTMLResponse, RedirectResponse
+from pydantic import BaseModel
+from nicegui import app
 from sqlmodel import Session
 
 from app.database.database import engine
 from app.services.UserHandler import UserHandler
 from app.services.TodoListHandler import TodoListHandler
 from app.services.TodoHandler import TodoHandler
+from app.models.user import User
+from app.models.todo import Todo
 
-from app.models.todo import (
-    Todo,
-    STATUS_BACKLOG,
-    STATUS_DONE,
-    PRIORITY_LOW,
-    PRIORITY_MEDIUM,
-    PRIORITY_HIGH,
-    PRIORITY_CRITICAL,
+from app.ui.styles import HEAD_HTML
+from app.ui.templates import (
+    LOGIN_HTML, LOGIN_JS,
+    REGISTER_HTML, REGISTER_JS,
+    TODO_APP_HTML, TODO_APP_JS,
 )
 
 
-def get_current_user_id() -> int | None:
-    return app.storage.user.get("user_id")
+# ─── Session store ─────────────────────────────────────────────────────────────
+
+_sessions: dict[str, int] = {}
 
 
-def logout() -> None:
-    app.storage.user.clear()
-    ui.navigate.to("/login")
+def _get_user_id(request: Request) -> int | None:
+    token = request.cookies.get("tf_session")
+    return _sessions.get(token) if token else None
 
 
-@ui.page("/")
-def index_page():
-    ui.navigate.to("/login")
+def _create_session(response: Response, user_id: int) -> None:
+    token = str(uuid.uuid4())
+    _sessions[token] = user_id
+    response.set_cookie("tf_session", token, httponly=True, samesite="lax", max_age=86400 * 7)
 
 
-@ui.page("/login")
-def login_page():
-    if get_current_user_id() is not None:
-        ui.navigate.to("/todos")
-        return
-
-    with ui.column().classes("w-full items-center justify-center mt-20 gap-4"):
-        ui.label("Login").classes("text-3xl font-bold")
-
-        email_input = ui.input("E-Mail").classes("w-96")
-        password_input = ui.input(
-            "Passwort",
-            password=True,
-            password_toggle_button=True,
-        ).classes("w-96")
-
-        def login():
-            email = (email_input.value or "").strip()
-            password = password_input.value or ""
-
-            if not email or not password:
-                ui.notify("Bitte E-Mail und Passwort eingeben", color="warning")
-                return
-
-            with Session(engine) as session:
-                user_handler = UserHandler(session)
-                user = user_handler.get_by_email(email)
-
-            if user is None:
-                ui.notify("Benutzer nicht gefunden", color="negative")
-                return
-
-            if not user.check_password(password):
-                ui.notify("Falsches Passwort", color="negative")
-                return
-
-            app.storage.user["user_id"] = user.id
-            ui.notify("Login erfolgreich", color="positive")
-            ui.navigate.to("/todos")
-
-        ui.button("Einloggen", on_click=login).classes("w-96")
+def _destroy_session(request: Request, response: Response) -> None:
+    token = request.cookies.get("tf_session")
+    if token:
+        _sessions.pop(token, None)
+    response.delete_cookie("tf_session")
 
 
-@ui.page("/todos")
-def todo_page():
-    user_id = get_current_user_id()
-    if user_id is None:
-        ui.navigate.to("/login")
-        return
+# ─── HTML page builder ─────────────────────────────────────────────────────────
 
-    ui.add_head_html(
-        """
-        <script src="https://cdn.tailwindcss.com"></script>
-        <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
-        """
-    )
+def _auth_page(title: str, body_html: str, body_js: str) -> str:
+    parts = [
+        '<!DOCTYPE html><html lang="de"><head>',
+        '<meta charset="UTF-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
+        f'<title>{title}</title>',
+        HEAD_HTML,
+        '<style>html,body{margin:0;padding:0;min-height:100%;background:var(--bg)}</style>',
+        '</head><body>',
+        body_html,
+        '<script>', body_js, '</script>',
+        '</body></html>',
+    ]
+    return ''.join(parts)
 
-    selected_list_id = {"value": None}
-    todo_list_column = ui.column()
-    todo_column = ui.column()
-    dashboard_column = ui.column().classes("w-full")
 
-    def refresh_js_dashboard(todos: list[Todo]):
-        done_count = len([todo for todo in todos if todo.status == STATUS_DONE])
-        open_count = len(todos) - done_count
-        avg_progress = round(sum(todo.progress for todo in todos) / len(todos)) if todos else 0
+def _todos_page(user_name: str, lists_json: str, todos_json: str) -> str:
+    parts = [
+        '<!DOCTYPE html><html lang="de"><head>',
+        '<meta charset="UTF-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
+        '<title>TaskFlow</title>',
+        HEAD_HTML,
+        '<style>html,body{height:100%;overflow:hidden;margin:0;padding:0;background:var(--bg)}</style>',
+        '</head><body style="margin:0;padding:0">',
+        TODO_APP_HTML,
+        '<script>',
+        f'window.__USER__ = {json.dumps(user_name)};',
+        f'window.__LISTS__ = {lists_json};',
+        f'window.__TODOS__ = {todos_json};',
+        TODO_APP_JS,
+        '</script>',
+        '</body></html>',
+    ]
+    return ''.join(parts)
 
-        dashboard_column.clear()
-        with dashboard_column:
-            ui.html(
-                f"""
-                <div class="w-full max-w-5xl rounded-2xl p-6 bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-xl"
-                     x-data="{{ expanded: true }}">
-                  <div class="flex items-center justify-between">
-                    <div>
-                      <h2 class="text-2xl font-semibold">To-Do Dashboard</h2>
-                      <p class="text-slate-200">JS-Design direkt in eurer Hauptansicht integriert.</p>
-                    </div>
-                    <button class="px-4 py-2 rounded-xl bg-cyan-500 text-slate-900 font-semibold hover:bg-cyan-400 transition"
-                            @click="expanded = !expanded">
-                      Details umschalten
-                    </button>
-                  </div>
-                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6" x-show="expanded" x-transition>
-                    <div class="rounded-xl p-4 bg-white/10">
-                      <p class="text-sm uppercase tracking-wide text-cyan-200">Gesamt</p>
-                      <p class="text-3xl font-bold">{len(todos)}</p>
-                    </div>
-                    <div class="rounded-xl p-4 bg-white/10">
-                      <p class="text-sm uppercase tracking-wide text-cyan-200">Offen</p>
-                      <p class="text-3xl font-bold">{open_count}</p>
-                    </div>
-                    <div class="rounded-xl p-4 bg-white/10">
-                      <p class="text-sm uppercase tracking-wide text-cyan-200">Erledigt / Ø Fortschritt</p>
-                      <p class="text-3xl font-bold">{done_count} / {avg_progress}%</p>
-                    </div>
-                  </div>
-                </div>
-                """
-            )
 
-    def refresh_lists():
-        todo_list_column.clear()
+# ─── Data helpers ───────────────────────────────────────────────────────────────
 
-        with Session(engine) as session:
-            todo_list_handler = TodoListHandler(session)
-            todo_lists = todo_list_handler.get_lists_for_user(user_id)
+def _todo_to_js(todo: Todo) -> dict:
+    return {
+        "id": todo.id,
+        "title": todo.title,
+        "desc": todo.description or "",
+        "bucket": todo.status,
+        "priority": todo.priority,
+        "progress": todo.progress,
+        "startDate": todo.start_date.isoformat() if todo.start_date else "",
+        "dueDate": todo.due_date.isoformat() if todo.due_date else "",
+        "labels": [l.strip() for l in (todo.labels or "").split(",") if l.strip()],
+        "assignees": [],
+        "listId": todo.todo_list_id,
+    }
 
-        with todo_list_column:
-            ui.label("Meine Listen").classes("text-xl font-bold")
 
-            for todo_list in todo_lists:
-                with ui.row().classes("w-full items-center gap-2"):
-                    ui.button(
-                        todo_list.name,
-                        on_click=lambda todo_list_id=todo_list.id: select_list(todo_list_id),
-                    ).classes("flex-1")
+def _apply_js_data(todo: Todo, data: dict) -> None:
+    todo.title = data.get("title", "") or "Aufgabe"
+    todo.description = data.get("desc", "")
+    todo.status = data.get("bucket", "Backlog")
+    todo.priority = data.get("priority", "medium")
+    todo.progress = int(data.get("progress", 0))
+    todo.labels = ",".join(data.get("labels", []))
+    start = data.get("startDate")
+    todo.start_date = date.fromisoformat(start) if start else None
+    due = data.get("dueDate")
+    todo.due_date = date.fromisoformat(due) if due else None
 
-                    ui.button(
-                        "Löschen",
-                        on_click=lambda todo_list_id=todo_list.id: delete_list(todo_list_id),
-                    ).props("color=negative")
 
-    def refresh_todos():
-        todo_column.clear()
+# ─── Pydantic models ────────────────────────────────────────────────────────────
 
-        if selected_list_id["value"] is None:
-            refresh_js_dashboard([])
-            with todo_column:
-                ui.label("Bitte zuerst eine Liste auswählen.").classes("text-gray-500")
-            return
+class LoginData(BaseModel):
+    email: str
+    password: str
 
-        with Session(engine) as session:
-            todo_handler = TodoHandler(session)
-            todos = todo_handler.get_todos_for_list(selected_list_id["value"])
 
-        refresh_js_dashboard(todos)
+class RegisterData(BaseModel):
+    firstname: str
+    lastname: str
+    email: str
+    password: str
 
-        with todo_column:
-            ui.label("Todos").classes("text-xl font-bold")
 
-            for todo in todos:
-                is_done = todo.status == STATUS_DONE
+class ListData(BaseModel):
+    name: str
 
-                with ui.card().classes("w-full"):
-                    with ui.row().classes("w-full items-center justify-between"):
-                        with ui.column().classes("flex-1"):
-                            ui.label(todo.title).classes(
-                                "text-lg font-semibold line-through text-gray-400"
-                                if is_done else "text-lg font-semibold"
-                            )
-                            ui.label(todo.description or "-").classes("text-sm text-gray-500")
-                            ui.label(f"Priorität: {todo.priority}")
-                            ui.label(f"Fällig: {todo.due_date or '-'}")
-                            ui.label(f"Status: {todo.status}")
-                            ui.label(f"Fortschritt: {todo.progress}%")
 
-                        with ui.column().classes("gap-2"):
-                            ui.button(
-                                "Status wechseln",
-                                on_click=lambda todo_id=todo.id: toggle_status(todo_id),
-                            )
-                            ui.button(
-                                "Löschen",
-                                on_click=lambda todo_id=todo.id: delete_todo(todo_id),
-                            ).props("color=negative")
+class TodoData(BaseModel):
+    title: str = ""
+    desc: str = ""
+    bucket: str = "Backlog"
+    priority: str = "medium"
+    progress: int = 0
+    startDate: str = ""
+    dueDate: str = ""
+    labels: list[str] = []
+    assignees: list[str] = []
+    listId: int | None = None
 
-    def select_list(todo_list_id: int):
-        selected_list_id["value"] = todo_list_id
-        refresh_todos()
 
-    def add_list(name_input):
-        name = (name_input.value or "").strip()
+# ─── Page routes ────────────────────────────────────────────────────────────────
 
-        if not name:
-            ui.notify("Bitte einen Listennamen eingeben", color="warning")
-            return
+@app.get("/")
+async def route_index(request: Request):
+    return RedirectResponse("/login")
 
-        with Session(engine) as session:
-            todo_list_handler = TodoListHandler(session)
-            todo_list_handler.create_list(user_id, name)
 
-        name_input.value = ""
-        refresh_lists()
+@app.get("/login")
+async def route_login(request: Request):
+    if _get_user_id(request):
+        return RedirectResponse("/todos")
+    return HTMLResponse(_auth_page("TaskFlow — Login", LOGIN_HTML, LOGIN_JS))
 
-    def delete_list(todo_list_id: int):
-        with Session(engine) as session:
-            todo_list_handler = TodoListHandler(session)
-            todo_list_handler.delete(todo_list_id)
 
-        if selected_list_id["value"] == todo_list_id:
-            selected_list_id["value"] = None
+@app.get("/register")
+async def route_register(request: Request):
+    if _get_user_id(request):
+        return RedirectResponse("/todos")
+    return HTMLResponse(_auth_page("TaskFlow — Registrieren", REGISTER_HTML, REGISTER_JS))
 
-        refresh_lists()
-        refresh_todos()
 
-    def add_todo(title_input, description_input, priority_input, due_date_input):
-        if selected_list_id["value"] is None:
-            ui.notify("Bitte zuerst eine Liste auswählen", color="warning")
-            return
+@app.get("/todos")
+async def route_todos(request: Request):
+    user_id = _get_user_id(request)
+    if not user_id:
+        return RedirectResponse("/login")
 
-        title = (title_input.value or "").strip()
-        description = (description_input.value or "").strip()
-        priority = priority_input.value
-        due_date_raw = (due_date_input.value or "").strip()
+    with Session(engine) as session:
+        lists = TodoListHandler(session).get_lists_for_user(user_id)
+        user = UserHandler(session).get_by_id(user_id)
+        all_todos: list[Todo] = []
+        for lst in lists:
+            all_todos.extend(TodoHandler(session).get_todos_for_list(lst.id))
 
-        if not title:
-            ui.notify("Bitte einen Titel eingeben", color="warning")
-            return
+    user_name = user.full_name() if user else "User"
+    lists_json = json.dumps([{"id": l.id, "name": l.name} for l in lists])
+    todos_json = json.dumps([_todo_to_js(t) for t in all_todos])
 
-        parsed_due_date = None
-        if due_date_raw:
-            try:
-                parsed_due_date = date.fromisoformat(due_date_raw)
-            except ValueError:
-                ui.notify("Datum muss im Format YYYY-MM-DD sein", color="negative")
-                return
+    return HTMLResponse(_todos_page(user_name, lists_json, todos_json))
 
-        new_todo = Todo(
-            title=title,
-            description=description,
-            priority=priority or PRIORITY_MEDIUM,
-            status=STATUS_BACKLOG,
-            progress=0,
-            due_date=parsed_due_date,
-            todo_list_id=selected_list_id["value"],
+
+# ─── Auth API ───────────────────────────────────────────────────────────────────
+
+@app.post("/api/auth/login")
+async def api_login(data: LoginData, response: Response):
+    with Session(engine) as session:
+        user = UserHandler(session).get_by_email(data.email.strip())
+    if not user or not user.check_password(data.password):
+        return {"success": False, "error": "E-Mail oder Passwort falsch"}
+    _create_session(response, user.id)
+    return {"success": True}
+
+
+@app.post("/api/auth/register")
+async def api_register(data: RegisterData, response: Response):
+    with Session(engine) as session:
+        handler = UserHandler(session)
+        if handler.get_by_email(data.email.strip()):
+            return {"success": False, "error": "Diese E-Mail ist bereits registriert"}
+        user = User(
+            firstname=data.firstname.strip(),
+            lastname=data.lastname.strip(),
+            email=data.email.strip(),
+            password_hash=User.hash_password(data.password),
         )
+        handler.save(user)
+        user_id = user.id
+    _create_session(response, user_id)
+    return {"success": True}
 
+
+@app.post("/api/auth/logout")
+async def api_logout(request: Request, response: Response):
+    _destroy_session(request, response)
+    return {"success": True}
+
+
+# ─── Lists API ──────────────────────────────────────────────────────────────────
+
+@app.get("/api/lists")
+async def api_get_lists(request: Request):
+    user_id = _get_user_id(request)
+    if not user_id:
+        return []
+    with Session(engine) as session:
+        lists = TodoListHandler(session).get_lists_for_user(user_id)
+    return [{"id": l.id, "name": l.name} for l in lists]
+
+
+@app.post("/api/lists")
+async def api_create_list(data: ListData, request: Request):
+    user_id = _get_user_id(request)
+    if not user_id:
+        return {"error": "Nicht autorisiert"}
+    with Session(engine) as session:
+        lst = TodoListHandler(session).create_list(user_id, data.name.strip())
+        return {"id": lst.id, "name": lst.name}
+
+
+@app.delete("/api/lists/{list_id}")
+async def api_delete_list(list_id: int, request: Request):
+    user_id = _get_user_id(request)
+    if not user_id:
+        return {"error": "Nicht autorisiert"}
+    with Session(engine) as session:
+        TodoListHandler(session).delete(list_id)
+    return {"success": True}
+
+
+# ─── Todos API ──────────────────────────────────────────────────────────────────
+
+@app.get("/api/todos")
+async def api_get_todos(request: Request, list_id: int | None = None):
+    user_id = _get_user_id(request)
+    if not user_id:
+        return []
+    with Session(engine) as session:
+        handler = TodoHandler(session)
+        if list_id:
+            todos = handler.get_todos_for_list(list_id)
+        else:
+            lists = TodoListHandler(session).get_lists_for_user(user_id)
+            todos = []
+            for lst in lists:
+                todos.extend(handler.get_todos_for_list(lst.id))
+    return [_todo_to_js(t) for t in todos]
+
+
+@app.post("/api/todos")
+async def api_create_todo(data: TodoData, request: Request):
+    user_id = _get_user_id(request)
+    if not user_id:
+        return {"error": "Nicht autorisiert"}
+    list_id = data.listId
+    if not list_id:
         with Session(engine) as session:
-            todo_handler = TodoHandler(session)
-            todo_handler.save(new_todo)
+            lists = TodoListHandler(session).get_lists_for_user(user_id)
+            if lists:
+                list_id = lists[0].id
+            else:
+                lst = TodoListHandler(session).create_list(user_id, "Meine Liste")
+                list_id = lst.id
+    todo = Todo(todo_list_id=list_id)
+    _apply_js_data(todo, data.model_dump())
+    with Session(engine) as session:
+        saved = TodoHandler(session).save(todo)
+        return _todo_to_js(saved)
 
-        title_input.value = ""
-        description_input.value = ""
-        priority_input.value = PRIORITY_MEDIUM
-        due_date_input.value = ""
-        refresh_todos()
 
-    def toggle_status(todo_id: int):
-        with Session(engine) as session:
-            todo_handler = TodoHandler(session)
-            todo_handler.toggle_status(todo_id)
+@app.put("/api/todos/{todo_id}")
+async def api_update_todo(todo_id: int, data: TodoData, request: Request):
+    user_id = _get_user_id(request)
+    if not user_id:
+        return {"error": "Nicht autorisiert"}
+    with Session(engine) as session:
+        handler = TodoHandler(session)
+        todo = handler.get_by_id(todo_id)
+        if not todo:
+            return {"error": "Nicht gefunden"}
+        _apply_js_data(todo, data.model_dump())
+        session.add(todo)
+        session.commit()
+        session.refresh(todo)
+        return _todo_to_js(todo)
 
-        refresh_todos()
 
-    def delete_todo(todo_id: int):
-        with Session(engine) as session:
-            todo_handler = TodoHandler(session)
-            todo_handler.delete(todo_id)
-
-        refresh_todos()
-
-    with ui.column().classes("w-full p-6 gap-6"):
-        with ui.row().classes("w-full items-center justify-between"):
-            ui.label("To-Do App").classes("text-3xl font-bold")
-            ui.button("Logout", on_click=logout).props("color=negative")
-
-        dashboard_column.classes("w-full")
-
-        with ui.row().classes("w-full gap-6 items-start"):
-            with ui.card().classes("w-80"):
-                new_list_input = ui.input("Neue Liste").classes("w-full")
-                ui.button(
-                    "Liste hinzufügen",
-                    on_click=lambda: add_list(new_list_input),
-                ).classes("w-full")
-                todo_list_column.classes("w-full gap-2")
-
-            with ui.card().classes("flex-1"):
-                title_input = ui.input("Titel").classes("w-full")
-                description_input = ui.input("Beschreibung").classes("w-full")
-                priority_input = ui.select(
-                    [PRIORITY_LOW, PRIORITY_MEDIUM, PRIORITY_HIGH, PRIORITY_CRITICAL],
-                    label="Priorität",
-                    value=PRIORITY_MEDIUM,
-                ).classes("w-full")
-                due_date_input = ui.input("Fälligkeitsdatum (YYYY-MM-DD)").classes("w-full")
-
-                ui.button(
-                    "Todo hinzufügen",
-                    on_click=lambda: add_todo(
-                        title_input,
-                        description_input,
-                        priority_input,
-                        due_date_input,
-                    ),
-                ).classes("w-full")
-
-                todo_column.classes("w-full gap-3 mt-4")
-
-    refresh_lists()
-    refresh_todos()
+@app.delete("/api/todos/{todo_id}")
+async def api_delete_todo(todo_id: int, request: Request):
+    user_id = _get_user_id(request)
+    if not user_id:
+        return {"error": "Nicht autorisiert"}
+    with Session(engine) as session:
+        TodoHandler(session).delete(todo_id)
+    return {"success": True}

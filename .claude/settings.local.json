@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/Scripts/python.exe -c \"import app.ui.ui; print\\('Import OK'\\)\")",
+      "Bash(.venv/Scripts/python.exe -c \"import app.ui.ui; print\\('OK'\\)\")",
+      "Bash(python -c \"import nicegui; print\\(nicegui.__version__\\)\")",
+      "Bash(pip show *)",
+      "Bash(python -c ' *)",
+      "Bash(python -c \"import nicegui; import os; print\\(os.path.dirname\\(nicegui.__file__\\)\\)\")"
+    ]
+  }
+}
