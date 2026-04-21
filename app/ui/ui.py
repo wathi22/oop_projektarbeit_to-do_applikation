@@ -82,9 +82,56 @@ def todo_page():
         ui.navigate.to("/login")
         return
 
+    ui.add_head_html(
+        """
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+        """
+    )
+
     selected_list_id = {"value": None}
     todo_list_column = ui.column()
     todo_column = ui.column()
+    dashboard_column = ui.column().classes("w-full")
+
+    def refresh_js_dashboard(todos: list[Todo]):
+        done_count = len([todo for todo in todos if todo.status == STATUS_DONE])
+        open_count = len(todos) - done_count
+        avg_progress = round(sum(todo.progress for todo in todos) / len(todos)) if todos else 0
+
+        dashboard_column.clear()
+        with dashboard_column:
+            ui.html(
+                f"""
+                <div class="w-full max-w-5xl rounded-2xl p-6 bg-gradient-to-r from-slate-900 to-slate-700 text-white shadow-xl"
+                     x-data="{{ expanded: true }}">
+                  <div class="flex items-center justify-between">
+                    <div>
+                      <h2 class="text-2xl font-semibold">To-Do Dashboard</h2>
+                      <p class="text-slate-200">JS-Design direkt in eurer Hauptansicht integriert.</p>
+                    </div>
+                    <button class="px-4 py-2 rounded-xl bg-cyan-500 text-slate-900 font-semibold hover:bg-cyan-400 transition"
+                            @click="expanded = !expanded">
+                      Details umschalten
+                    </button>
+                  </div>
+                  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6" x-show="expanded" x-transition>
+                    <div class="rounded-xl p-4 bg-white/10">
+                      <p class="text-sm uppercase tracking-wide text-cyan-200">Gesamt</p>
+                      <p class="text-3xl font-bold">{len(todos)}</p>
+                    </div>
+                    <div class="rounded-xl p-4 bg-white/10">
+                      <p class="text-sm uppercase tracking-wide text-cyan-200">Offen</p>
+                      <p class="text-3xl font-bold">{open_count}</p>
+                    </div>
+                    <div class="rounded-xl p-4 bg-white/10">
+                      <p class="text-sm uppercase tracking-wide text-cyan-200">Erledigt / Ø Fortschritt</p>
+                      <p class="text-3xl font-bold">{done_count} / {avg_progress}%</p>
+                    </div>
+                  </div>
+                </div>
+                """
+            )
 
     def refresh_lists():
         todo_list_column.clear()
@@ -112,6 +159,7 @@ def todo_page():
         todo_column.clear()
 
         if selected_list_id["value"] is None:
+            refresh_js_dashboard([])
             with todo_column:
                 ui.label("Bitte zuerst eine Liste auswählen.").classes("text-gray-500")
             return
@@ -119,6 +167,8 @@ def todo_page():
         with Session(engine) as session:
             todo_handler = TodoHandler(session)
             todos = todo_handler.get_todos_for_list(selected_list_id["value"])
+
+        refresh_js_dashboard(todos)
 
         with todo_column:
             ui.label("Todos").classes("text-xl font-bold")
@@ -238,6 +288,8 @@ def todo_page():
         with ui.row().classes("w-full items-center justify-between"):
             ui.label("To-Do App").classes("text-3xl font-bold")
             ui.button("Logout", on_click=logout).props("color=negative")
+
+        dashboard_column.classes("w-full")
 
         with ui.row().classes("w-full gap-6 items-start"):
             with ui.card().classes("w-80"):
