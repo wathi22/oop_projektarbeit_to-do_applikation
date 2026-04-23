@@ -60,7 +60,7 @@ class Todo(SQLModel, table=True):
 
     # Maigc-Method für bessere Debugging- und Logging-Ausgaben
     def __str__(self) -> str:
-        return f"{self.title} [{self.status}]"
+        return f"{self.title} [{self.status.value}]"
     
     def __repr__(self) -> str:
         return (

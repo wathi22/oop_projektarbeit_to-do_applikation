@@ -185,17 +185,98 @@ def test_is_overdue_returns_false_when_todo_is_done():
     # Assert
     assert result is False
 
-# Happy Path
-def test_string_representation():
+# Magic-Method Happy Path __str__ gibt Titel und Status zurück
+def test_str_returns_title_and_status():
     # Arrange
     todo = Todo(
         title="ORM lernen",
         status=Status.BACKLOG,
-        priority=Priority.HIGH,
     )
 
     # Act
     result = str(todo)
-
+    
     # Assert
     assert result == "ORM lernen [Backlog]"
+
+# Magic-Method Happy Path __repr__ gibt alle wichtigen Felder zurück
+def test_repr_contains_key_fields():
+    # Arrange
+    todo = Todo(
+        id=1,
+        title="ORM lernen",
+        priority=Priority.HIGH,
+        status=Status.TODO,
+    )
+
+    # Act
+    result = repr(todo)
+
+    # Assert
+    assert result.startswith("Todo(")
+    assert "id=1" in result
+    assert "title='ORM lernen'" in result
+    assert "status=" in result
+
+# Magic-Method Happy Path __eq__  gleiche ID und unterschiedliche Attribute => trotzdem gleich
+def test_eq_returns_true_for_same_id():
+    # Arrange
+    todo1 = Todo(
+        id=1,
+        title="ORM lernen",
+        priority=Priority.HIGH,
+        status=Status.TODO,
+    )
+    todo2 = Todo(
+        id=1,
+        title="Math lernen",
+        priority=Priority.LOW,
+        status=Status.BACKLOG,
+    )
+
+    # Act
+    result = (todo1 == todo2)
+
+    # Assert
+    assert result is True
+
+# Magic-Method Happy Path __eq__ unterschiedliche ID und gleiche Attribute => trotzdem ungleich
+def test_eq_returns_false_for_different_id():
+    # Arrange
+    todo1 = Todo(
+        id=1,
+        title="ORM lernen",
+        priority=Priority.HIGH,
+        status=Status.TODO,
+    )
+    todo2 = Todo(
+        id=2,
+        title="ORM lernen",
+        priority=Priority.HIGH,
+        status=Status.TODO,
+    )
+
+    # Act
+    result = (todo1 == todo2)
+
+    # Assert
+    assert result is False
+
+# Magic-Method Edge Case: Vergleich mit einem Objekt eines anderen Typs soll False zurückgeben
+def test_eq_returns_false_when_comparing_with_different_type():
+    # Arrange
+    todo = Todo(
+        id=1,
+        title="Mathe Lernen",
+        description="Angwandte Mathematik lernen",
+        priority=Priority.HIGH,
+        status=Status.TODO,
+        progress=50,
+        start_date=date(2024, 6, 1),
+        due_date=date(2024, 6, 30),
+    )
+    not_a_todo = "Ich bin kein Todo-Objekt"
+    # Act
+    result = (todo == not_a_todo)
+    # Assert
+    assert result is False
