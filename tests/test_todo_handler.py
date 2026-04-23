@@ -3,11 +3,8 @@ from datetime import date
 from app.services.TodoHandler import TodoHandler
 from app.models.todo import (
     Todo,
-    PRIORITY_HIGH,
-    PRIORITY_LOW,
-    PRIORITY_CRITICAL,
-    STATUS_BACKLOG,
-    STATUS_IN_PROGRESS,
+    Status,
+    Priority
 )
 
 
@@ -18,8 +15,8 @@ def test_save_todo_sets_id(session, sample_todo_list):
     todo = Todo(
         title="SQLModel lernen",
         description="ORM und Handler verstehen",
-        priority=PRIORITY_HIGH,
-        status=STATUS_BACKLOG,
+        priority=Priority.HIGH,
+        status=Status.BACKLOG,
         progress=0,
         labels="studium,python",
         todo_list_id=sample_todo_list.id,
@@ -92,16 +89,16 @@ def test_get_all_returns_all_todos(session, sample_todo_list):
     todo1 = Todo(
         title="Task 1",
         description="Beschreibung 1",
-        priority=PRIORITY_HIGH,
-        status=STATUS_BACKLOG,
+        priority=Priority.HIGH,
+        status=Status.BACKLOG,
         progress=0,
         todo_list_id=sample_todo_list.id,
     )
     todo2 = Todo(
         title="Task 2",
         description="Beschreibung 2",
-        priority=PRIORITY_LOW,
-        status=STATUS_BACKLOG,
+        priority=Priority.LOW,
+        status=Status.BACKLOG,
         progress=0,
         todo_list_id=sample_todo_list.id,
     )
@@ -141,8 +138,8 @@ def test_update_changes_todo_fields(session, sample_todo):
         sample_todo.id,
         title="Updated Task",
         description="Neue Beschreibung",
-        priority=PRIORITY_CRITICAL,
-        status=STATUS_IN_PROGRESS,
+        priority=Priority.CRITICAL,
+        status=Status.IN_PROGRESS,
         progress=50,
         labels="updated,important",
     )
@@ -151,8 +148,8 @@ def test_update_changes_todo_fields(session, sample_todo):
     assert updated_todo is not None
     assert updated_todo.title == "Updated Task"
     assert updated_todo.description == "Neue Beschreibung"
-    assert updated_todo.priority == PRIORITY_CRITICAL
-    assert updated_todo.status == STATUS_IN_PROGRESS
+    assert updated_todo.priority == Priority.CRITICAL
+    assert updated_todo.status == Status.IN_PROGRESS
     assert updated_todo.progress == 50
     assert updated_todo.labels == "updated,important"
 
@@ -197,14 +194,14 @@ def test_get_todos_for_list_returns_matching_todos(session, sample_todo_list):
 
     todo1 = Todo(
         title="Task 1",
-        priority=PRIORITY_HIGH,
-        status=STATUS_BACKLOG,
+        priority=Priority.HIGH,
+        status=Status.BACKLOG,
         todo_list_id=sample_todo_list.id,
     )
     todo2 = Todo(
         title="Task 2",
-        priority=PRIORITY_LOW,
-        status=STATUS_BACKLOG,
+        priority=Priority.LOW,
+        status=Status.BACKLOG,
         todo_list_id=sample_todo_list.id,
     )
 

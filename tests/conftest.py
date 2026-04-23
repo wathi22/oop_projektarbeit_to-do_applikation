@@ -4,8 +4,8 @@ from app.models.user import User
 from app.models.todo_list import TodoList
 from app.models.todo import (
     Todo,
-    PRIORITY_HIGH,
-    STATUS_BACKLOG,
+    Status,
+    Priority
 )
 
 @pytest.fixture
@@ -57,8 +57,8 @@ def sample_todo_list_with_todos(session, sample_user):
         Todo(
             title="ORM lernen",
             description="SQLModel und Handler verstehen",
-            priority=PRIORITY_HIGH,
-            status=STATUS_BACKLOG,
+            priority=Priority.HIGH,
+            status=Status.BACKLOG,
             progress=0,
             labels="studium,python",
             todo_list_id=todo_List.id,
@@ -66,8 +66,8 @@ def sample_todo_list_with_todos(session, sample_user):
         Todo(
             title="Python üben",
             description="Übungsaufgaben lösen",
-            priority=PRIORITY_HIGH,
-            status=STATUS_BACKLOG,
+            priority=Priority.HIGH,
+            status=Status.BACKLOG,
             progress=0,
             labels="studium,python",
             todo_list_id=todo_List.id,
@@ -75,8 +75,8 @@ def sample_todo_list_with_todos(session, sample_user):
         Todo(
             title="Docker kennenlernen",
             description="Docker Grundlagen verstehen",
-            priority=PRIORITY_HIGH,
-            status=STATUS_BACKLOG,
+            priority=Priority.HIGH,
+            status=Status.BACKLOG,
             progress=0,
             labels="studium,docker",
             todo_list_id=todo_List.id,
@@ -95,8 +95,8 @@ def sample_todo(session, sample_todo_list):
     todo = Todo(
         title="ORM lernen",
         description="SQLModel und Handler verstehen",
-        priority=PRIORITY_HIGH,
-        status=STATUS_BACKLOG,
+        priority=Priority.HIGH,
+        status=Status.BACKLOG,
         progress=0,
         labels="studium,python",
         todo_list_id=sample_todo_list.id,

@@ -2,29 +2,24 @@ from datetime import date, timedelta
 
 from app.models.todo import (
     Todo,
-    STATUS_BACKLOG,
-    STATUS_TODO,
-    STATUS_IN_PROGRESS,
-    STATUS_DONE,
-    PRIORITY_LOW,
-    PRIORITY_HIGH,
+    Status,
+    Priority
 )
-
 
 # Happy Path: Status wechselt von Backlog zu To-Do
 def test_toggle_status_changes_backlog_to_todo():
     # Arrange
     todo = Todo(
         title="ORM lernen",
-        status=STATUS_BACKLOG,
-        priority=PRIORITY_HIGH,
+        status=Status.BACKLOG,
+        priority=Priority.HIGH,
     )
 
     # Act
     todo.toggle_status()
 
     # Assert
-    assert todo.status == STATUS_TODO
+    assert todo.status == Status.TODO
 
 
 # Happy Path: Status wechselt von To-Do zu In Progress
@@ -32,15 +27,15 @@ def test_toggle_status_changes_todo_to_in_progress():
     # Arrange
     todo = Todo(
         title="ORM lernen",
-        status=STATUS_TODO,
-        priority=PRIORITY_HIGH,
+        status=Status.TODO,
+        priority=Priority.HIGH,
     )
 
     # Act
     todo.toggle_status()
 
     # Assert
-    assert todo.status == STATUS_IN_PROGRESS
+    assert todo.status == Status.IN_PROGRESS
 
 
 # Happy Path: Status wechselt von In Progress zu Done
@@ -48,15 +43,15 @@ def test_toggle_status_changes_in_progress_to_done():
     # Arrange
     todo = Todo(
         title="ORM lernen",
-        status=STATUS_IN_PROGRESS,
-        priority=PRIORITY_HIGH,
+        status=Status.IN_PROGRESS,
+        priority=Priority.HIGH,
     )
 
     # Act
     todo.toggle_status()
 
     # Assert
-    assert todo.status == STATUS_DONE
+    assert todo.status == Status.DONE
 
 
 # Edge Case: Status Done springt wieder auf Backlog zurück
@@ -64,15 +59,15 @@ def test_toggle_status_cycles_done_back_to_backlog():
     # Arrange
     todo = Todo(
         title="ORM lernen",
-        status=STATUS_DONE,
-        priority=PRIORITY_HIGH,
+        status=Status.DONE,
+        priority=Priority.HIGH,
     )
 
     # Act
     todo.toggle_status()
 
     # Assert
-    assert todo.status == STATUS_BACKLOG
+    assert todo.status == Status.BACKLOG
 
 
 # Happy Path: Fortschritt wird mit gültigem Wert aktualisiert
@@ -81,7 +76,7 @@ def test_update_progress_sets_valid_value():
     todo = Todo(
         title="ORM lernen",
         progress=0,
-        priority=PRIORITY_LOW,
+        priority=Priority.LOW,
     )
 
     # Act
@@ -97,7 +92,7 @@ def test_update_progress_ignores_negative_value():
     todo = Todo(
         title="ORM lernen",
         progress=10,
-        priority=PRIORITY_LOW,
+        priority=Priority.LOW,
     )
 
     # Act
@@ -113,7 +108,7 @@ def test_update_progress_ignores_value_above_100():
     todo = Todo(
         title="ORM lernen",
         progress=10,
-        priority=PRIORITY_LOW,
+        priority=Priority.LOW,
     )
 
     # Act
@@ -128,9 +123,9 @@ def test_is_overdue_returns_false_when_due_date_is_none():
     # Arrange
     todo = Todo(
         title="ORM lernen",
-        status=STATUS_BACKLOG,
+        status=Status.BACKLOG,
         due_date=None,
-        priority=PRIORITY_HIGH,
+        priority=Priority.HIGH,
     )
 
     # Act
@@ -145,9 +140,9 @@ def test_is_overdue_returns_true_for_past_due_date_and_open_status():
     # Arrange
     todo = Todo(
         title="ORM lernen",
-        status=STATUS_TODO,
+        status=Status.TODO,
         due_date=date.today() - timedelta(days=1),
-        priority=PRIORITY_HIGH,
+        priority=Priority.HIGH,
     )
 
     # Act
@@ -162,9 +157,9 @@ def test_is_overdue_returns_false_for_future_due_date():
     # Arrange
     todo = Todo(
         title="ORM lernen",
-        status=STATUS_TODO,
+        status=Status.TODO,
         due_date=date.today() + timedelta(days=3),
-        priority=PRIORITY_HIGH,
+        priority=Priority.HIGH,
     )
 
     # Act
@@ -179,9 +174,9 @@ def test_is_overdue_returns_false_when_todo_is_done():
     # Arrange
     todo = Todo(
         title="ORM lernen",
-        status=STATUS_DONE,
+        status=Status.DONE,
         due_date=date.today() - timedelta(days=1),
-        priority=PRIORITY_HIGH,
+        priority=Priority.HIGH,
     )
 
     # Act
@@ -189,3 +184,18 @@ def test_is_overdue_returns_false_when_todo_is_done():
 
     # Assert
     assert result is False
+
+# Happy Path
+def test_string_representation():
+    # Arrange
+    todo = Todo(
+        title="ORM lernen",
+        status=Status.BACKLOG,
+        priority=Priority.HIGH,
+    )
+
+    # Act
+    result = str(todo)
+
+    # Assert
+    assert result == "ORM lernen [Backlog]"
