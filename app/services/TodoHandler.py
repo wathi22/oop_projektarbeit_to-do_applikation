@@ -3,7 +3,7 @@ from datetime import date
 from sqlmodel import Session, select
 from app.models.todo import Todo
 
-
+#by matthias
 class TodoHandler:
 
     def __init__(self, session: Session): # Initialisierung der TodoHandler-Klasse mit einer SQLModel-Session
