@@ -6,7 +6,7 @@ from app.models.todo import Todo
 
 class TodoHandler:
 
-    def __init__(self, session: Session):
+    def __init__(self, session: Session): # Initialisierung der TodoHandler-Klasse mit einer SQLModel-Session
         self.session = session
 
     def save(self, todo: Todo) -> Todo:
