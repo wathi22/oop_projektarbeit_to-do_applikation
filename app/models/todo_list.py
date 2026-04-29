@@ -33,3 +33,17 @@ class TodoList(SQLModel, table=True):
             filtered = [todo for todo in filtered if todo.priority == priority]
 
         return filtered
+    
+# Magic-Method Happy Path __str__ gibt den Namen der TodoList zurück
+    def __str__(self) -> str:
+        return f"TodoList Name: {self.name}"
+    
+# Magic-Method Happy Path __repr__ gibt eine detaillierte Darstellung der TodoList zurück
+    def __repr__(self) -> str:
+        return f"TodoList(id={self.id}, name='{self.name}', owner_id={self.owner_id})"
+    
+# Magic-Method Happy Path __eq__ vergleicht zwei TodoList-Objekte basierend auf ihrer ID
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, TodoList):
+            return NotImplemented
+        return self.id == other.id
