@@ -27,22 +27,21 @@ class User(SQLModel, table=True):
         password_bytes = plain_password.encode("utf-8")
         hash_bytes = self.password_hash.encode("utf-8")
         return bcrypt.checkpw(password_bytes, hash_bytes)
-
+    
     def full_name(self) -> str:
         return f"{self.firstname} {self.lastname}"
     
     # Magic-Method Happy Path __str__ gibt Vor- und Nachname zurück
     def __str__(self) -> str:
-        return f"{self.firstname} {self.lastname}"
+        return self.full_name()
     
     # Magic-Method Happy Path __repr__ gibt alle wichtigen Felder zurück
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"User(id={self.id!r}, "
             f"firstname={self.firstname!r}, "
             f"lastname={self.lastname!r}, "
             f"email={self.email!r})"
-            f"password_hash={'***' if self.password_hash else None!r})"
         )
     
     # Magic-Method Happy Path __eq__ gleiche ID => gleich
