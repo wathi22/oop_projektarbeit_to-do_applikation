@@ -86,6 +86,59 @@ def test_update_progress_sets_valid_value():
     assert todo.progress == 75
 
 
+# Edge Case: Fortschritt 0 ist ein gültiger Grenzwert
+def test_update_progress_allows_zero():
+    # Arrange
+    todo = Todo(
+        title="ORM lernen",
+        progress=50,
+        priority=Priority.LOW,
+    )
+
+    # Act
+    todo.update_progress(0)
+
+    # Assert
+    assert todo.progress == 0
+
+
+# Edge Case: Fortschritt 100 ist ein gültiger Grenzwert
+def test_update_progress_allows_hundred():
+    # Arrange
+    todo = Todo(
+        title="ORM lernen",
+        progress=50,
+        priority=Priority.LOW,
+    )
+
+    # Act
+    todo.update_progress(100)
+
+    # Assert
+    assert todo.progress == 100
+
+# Edge Case: Fortschritt unter 0 soll ignoriert werden
+def test_update_progress_ignores_minus_one():
+    todo = Todo(title="Test", progress=50, priority=Priority.LOW)
+
+    # Act
+    todo.update_progress(-1)
+
+    # Assert
+    assert todo.progress == 50
+
+
+# Edge Case: Fortschritt über 100 soll ignoriert werden
+def test_update_progress_ignores_hundred_one():
+    todo = Todo(title="Test", progress=50, priority=Priority.LOW)
+
+    # Act
+    todo.update_progress(101)
+
+    # Assert
+    assert todo.progress == 50
+
+
 # Edge Case: Negativer Fortschritt soll ignoriert werden
 def test_update_progress_ignores_negative_value():
     # Arrange
