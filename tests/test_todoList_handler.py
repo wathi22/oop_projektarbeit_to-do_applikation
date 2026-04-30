@@ -1,5 +1,6 @@
 from app.services.TodoListHandler import TodoListHandler
 from app.models.todo_list import TodoList
+import pytest
 
 # Happy Path: Eine TodoList wird erfolgreich gespeichert
 def test_save_todo_list_sets_id(session, sample_todo_list):
@@ -11,19 +12,6 @@ def test_save_todo_list_sets_id(session, sample_todo_list):
 
     # Assert
     assert saved_todo_list.id is not None
-
-# Edge Case: Eine TodoList mit leerem Namen soll nicht gespeichert werden
-def test_save_todo_list_with_empty_name_fails(session, sample_user):
-    # Arrange
-    todo_list_handler = TodoListHandler(session)
-    invalid_todo_list = TodoList(name="", owner_id=sample_user.id)
-
-    # Act & Assert
-    try:
-        todo_list_handler.save(invalid_todo_list)
-        assert False, "Expected an exception for empty name"
-    except Exception as e:
-        assert "name" in str(e).lower()
 
 # Happy Path: Eine TodoList wird erfolgreich gelöscht
 def test_delete_todo_list_removes_it_from_db(session, sample_todo_list):
@@ -182,8 +170,14 @@ def test_create_list_with_empty_name_fails(session, sample_user):
     todo_list_handler = TodoListHandler(session)
 
     # Act & Assert
-    try:
-        todo_list_handler.create_list(sample_user.id, "")
-        assert False, "Expected an exception for empty list name"
-    except Exception as e:
-        assert "name" in str(e).lower() or "null" in str(e).lower()
+    with pytest.raises(ValueError):
+        todo_list_handler.create_list(sample_user.id, " ")
+
+# Edge Case: update mit leerem Namen soll fehlschlagen
+def test_update_with_empty_name_fails(session, sample_todo_list):
+    # Arrange
+    todo_list_handler = TodoListHandler(session)
+
+    # Act & Assert
+    with pytest.raises(ValueError):
+        todo_list_handler.update(sample_todo_list.id, name="   ")

@@ -1,7 +1,7 @@
 from typing import Optional
 from datetime import date
 from sqlmodel import Session, select
-from app.models.todo import Todo
+from app.models.todo import Todo, Priority, Status
 from app.services.BaseHandler import BaseHandler
 
 #by matthias
@@ -26,6 +26,17 @@ class TodoHandler(BaseHandler):
         todo = self.session.get(Todo, todo_id)
         if not todo:
             return None
+        
+        if priority is not None:
+            # Wenn String reingegeben wird, gegen Enum prüfen
+            if priority not in Priority._value2member_map_ and priority not in Priority:
+                raise ValueError(f"Ungültige Priorität: {priority}")
+            todo.priority = priority
+        
+        if status is not None:
+            if status not in Status._value2member_map_ and status not in Status:
+                raise ValueError(f"Ungültiger Status: {status}")
+            todo.status = status
 
         if title is not None:
             todo.title = title

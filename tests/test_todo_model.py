@@ -1,10 +1,18 @@
 from datetime import date, timedelta
+from app.services.TodoHandler import TodoHandler
+import pytest
 
 from app.models.todo import (
     Todo,
     Status,
     Priority
 )
+
+# Edge Case: Ungültiger Priority-Wert wird abgelehnt
+def test_update_with_invalid_priority_raises_value_error(session, sample_todo):
+    handler = TodoHandler(session)
+    with pytest.raises(ValueError):
+        handler.update(sample_todo.id, priority="banane")
 
 # Happy Path: Status wechselt von Backlog zu To-Do
 def test_toggle_status_changes_backlog_to_todo():
