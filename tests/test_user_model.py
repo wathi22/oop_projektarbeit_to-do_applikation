@@ -21,21 +21,37 @@ def test_password_check_fails_with_wrong_password(sample_user):
     assert result is False
 
 # Happy Path: __str__ gibt Vor- und Nachname zurück
-# Arrange
-def test_str_returns_full_name(sample_user):
+def test_str_returns_full_name():
+
+    # Arrange
+    user = User(
+        id=1,
+        firstname="Wathanak",
+        lastname="Deng",
+        email="wathanak.deng@example.com",
+        password_hash="dummy"
+    )
 
     # Act
-    result = str(sample_user)
+    result = str(user)
 
     # Assert
     assert result == "Wathanak Deng"
 
 # Happy Path: __repr__ gibt alle wichtigen Felder zurück, aber versteckt das Passwort
-# Arrange
-def test_repr_returns_all_fields(sample_user):
+def test_repr_returns_all_fields():
+
+    # Arrange
+    user = User(
+        id=1,
+        firstname="Wathanak",
+        lastname="Deng",
+        email="wathanak.deng@example.com",
+        password_hash="dummy"
+    )
 
     # Act
-    repr_str = repr(sample_user)
+    repr_str = repr(user)
 
     # Assert
     assert "User(id=" in repr_str
@@ -45,11 +61,19 @@ def test_repr_returns_all_fields(sample_user):
     assert "password_hash=" not in repr_str
 
 # Magic-Method Happy Path __eq__ gleiche ID => gleich
-def test_eq_returns_true_for_same_id(sample_user):
+def test_eq_returns_true_for_same_id():
 
     # Arrange
+    user = User(
+        id=1,
+        firstname="Wathanak",
+        lastname="Deng",
+        email="wathanak.deng@example.com",
+        password_hash="dummy"
+    )
+
     user2 = User(
-        id=sample_user.id,                # GLEICH
+        id=user.id,                # GLEICH
         firstname="Max",                  # anders
         lastname="Mustermann",            # anders
         email="max@example.com",          # anders
@@ -57,15 +81,23 @@ def test_eq_returns_true_for_same_id(sample_user):
     )
 
     # Act
-    result = (sample_user == user2)
+    result = (user == user2)
 
     # Assert
     assert result is True
 
 # Magic-Method Happy Path __eq__ unterschiedliche ID => ungleich
-def test_eq_returns_false_for_different_id(sample_user):
+def test_eq_returns_false_for_different_id():
 
     # Arrange
+    user = User(
+        id=1,
+        firstname="Wathanak",
+        lastname="Deng",
+        email="wathanak.deng@example.com",
+        password_hash="dummy"
+    )
+
     user2 = User(
         id=999,
         firstname="Wathanak",
@@ -75,19 +107,27 @@ def test_eq_returns_false_for_different_id(sample_user):
     )
 
     # Act
-    result = sample_user == user2
+    result = user == user2
 
     # Assert
     assert result is False
 
 # Magic-Method Edge Case: Vergleich mit einem Objekt eines anderen Typs soll False zurückgeben
-def test_eq_returns_false_when_comparing_with_different_type(sample_user):
+def test_eq_returns_false_when_comparing_with_different_type():
 
     # Arrange
+    user = User(
+        id=1,
+        firstname="Wathanak",
+        lastname="Deng",
+        email="wathanak.deng@example.com",
+        password_hash="dummy"
+    )
+
     not_a_user = "Ich bin kein User-Objekt"
 
     # Act
-    result = (sample_user == not_a_user)
+    result = (user == not_a_user)
 
     # Assert
     assert result is False

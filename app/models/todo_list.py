@@ -40,7 +40,11 @@ class TodoList(SQLModel, table=True):
     
 # Magic-Method Happy Path __repr__ gibt eine detaillierte Darstellung der TodoList zurück
     def __repr__(self) -> str:
-        return f"TodoList(id={self.id}, name='{self.name}', owner_id={self.owner_id})"
+        return (
+            f"TodoList(id={self.id!r}, "
+            f"name={self.name!r}, "
+            f"owner_id={self.owner_id!r})"
+        )
     
 # Magic-Method Happy Path __eq__ vergleicht zwei TodoList-Objekte basierend auf ihrer ID
     def __eq__(self, other: object) -> bool:

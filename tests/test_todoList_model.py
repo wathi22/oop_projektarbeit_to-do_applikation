@@ -117,3 +117,61 @@ def test_filter_todos_without_filters_returns_all_todos():
 
     # Assert
     assert len(result) == 2
+
+# Magic-Method Happy Path: __str__ gibt den Namen der TodoList zurück
+def test_str_returns_todo_list_name():
+    # Arrange
+    todo_list = TodoList(name="Studium")
+
+    # Act
+    result = str(todo_list)
+
+    # Assert
+    assert result == "TodoList Name: Studium"
+
+# Magic-Method Happy Path: __repr__ gibt eine detaillierte Darstellung der TodoList zurück
+def test_repr_returns_detailed_representation():
+    # Arrange
+    todo_list = TodoList(id=1, name="Studium", owner_id=42)
+
+    # Act
+    result = repr(todo_list)
+
+    # Assert
+    assert result == "TodoList(id=1, name='Studium', owner_id=42)"
+
+# Magic-Method Happy Path: __eq__ vergleicht zwei TodoList-Objekte basierend auf ihrer ID
+def test_eq_returns_true_for_same_id():
+    # Arrange
+    todo_list1 = TodoList(id=1, name="Studium", owner_id=42)
+    todo_list2 = TodoList(id=1, name="Freizeit", owner_id=99)
+
+    # Act
+    result = (todo_list1 == todo_list2)
+
+    # Assert
+    assert result is True
+
+# Magic-Method Happy Path: __eq__ vergleicht zwei TodoList-Objekte mit unterschiedlichen IDs als ungleich und gleiche Attribute als gleich
+def test_eq_returns_false_for_different_id():
+    # Arrange
+    todo_list1 = TodoList(id=1, name="Studium", owner_id=42)
+    todo_list2 = TodoList(id=2, name="Studium", owner_id=42)
+
+    # Act
+    result = (todo_list1 == todo_list2)
+
+    # Assert
+    assert result is False
+
+# Magic-Method Edge Case: __eq__ vergleicht ein TodoList-Objekt mit einem Objekt eines anderen Typs und gibt false zurück
+def test_eq_returns_false_for_different_type():
+    # Arrange
+    todo_list = TodoList(id=1, name="Studium", owner_id=42)
+    not_a_todo_list = "Ich bin kein TodoList-Objekt"
+
+    # Act
+    result = (todo_list == not_a_todo_list)
+
+    # Assert
+    assert result is False
