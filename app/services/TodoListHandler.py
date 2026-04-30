@@ -1,35 +1,13 @@
 from typing import Optional
 from sqlmodel import Session, select
 from app.models.todo_list import TodoList
+from app.services.BaseHandler import BaseHandler
 
 
-class TodoListHandler:
-    def __init__(self, session: Session):
-        self.session = session
+class TodoListHandler(BaseHandler):
 
-    def save(self, todo_list: TodoList) -> TodoList:
-        self.session.add(todo_list)             # Hinzufügen des TodoList-Objekts zur Session   
-        self.session.commit()                   # Speichern der Änderungen in der Datenbank
-        self.session.refresh(todo_list)         # Aktualisieren des TodoList-Objekts mit den Daten aus der Datenbank (z.B. ID)
-        return todo_list
-
-# Löschen einer To-Do-Liste anhand ihrer ID
-    def delete(self, todo_list_id: int) -> bool:
-        todo_list = self.session.get(TodoList, todo_list_id)
-        if not todo_list:
-            return False
-
-        self.session.delete(todo_list)
-        self.session.commit()
-        return True
-
-# Abrufen einer To-Do-Liste anhand ihrer ID
-    def get_by_id(self, todo_list_id: int) -> Optional[TodoList]:
-        return self.session.get(TodoList, todo_list_id)
-
-    # Abrufen aller To-Do-Listen aus der Datenbank
-    def get_all(self) -> list[TodoList]:
-        return self.session.exec(select(TodoList)).all()
+    # Festlegen des Modells, das von diesem Handler verwaltet wird
+    model = TodoList
 
     # Aktualisieren einer To-Do-Liste anhand ihrer ID und optionaler Felder
     def update(
@@ -59,7 +37,4 @@ class TodoListHandler:
     # Erstellen einer neuen To-Do-Liste für einen bestimmten Benutzer
     def create_list(self, user_id: int, name: str) -> TodoList:
         new_todo_list = TodoList(name=name, owner_id=user_id)
-        self.session.add(new_todo_list)
-        self.session.commit()
-        self.session.refresh(new_todo_list)
-        return new_todo_list
+        return self.save(new_todo_list)

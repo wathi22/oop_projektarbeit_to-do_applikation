@@ -1,37 +1,13 @@
 from typing import Optional
 from sqlmodel import Session, select
 from app.models.user import User
+from app.services.BaseHandler import BaseHandler
 
 
-class UserHandler:
+class UserHandler(BaseHandler):
     
-    def __init__(self, session: Session):
-        self.session = session
-
-    # CRUD-Methoden für User
-    def save(self, user: User) -> User: 
-        self.session.add(user)          # Hinzufügen des User-Objekts zur Session
-        self.session.commit()           # Speichern der Änderungen in der Datenbank
-        self.session.refresh(user)      # Aktualisieren des User-Objekts mit den Daten aus der Datenbank (z.B. ID)
-        return user                     # Rückgabe des gespeicherten User-Objekts mit aktualisierten Informationen (z.B. ID)
-    
-    # Löschen eines Benutzers anhand seiner ID
-    def delete(self, user_id: int) -> bool:
-        user = self.session.get(User, user_id)
-        if not user:
-            return False
-
-        self.session.delete(user)
-        self.session.commit()
-        return True
-
-    # Abrufen eines Benutzers anhand seiner ID
-    def get_by_id(self, user_id: int) -> Optional[User]:
-        return self.session.get(User, user_id)
-
-    # Abrufen aller Benutzer aus der Datenbank
-    def get_all(self) -> list[User]:
-        return self.session.exec(select(User)).all()
+    # Festlegen des Modells, das von diesem Handler verwaltet wird
+    model = User
 
     # Aktualisieren eines Benutzers anhand seiner ID und optionaler Felder
     def update(

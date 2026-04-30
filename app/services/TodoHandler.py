@@ -2,36 +2,13 @@ from typing import Optional
 from datetime import date
 from sqlmodel import Session, select
 from app.models.todo import Todo
+from app.services.BaseHandler import BaseHandler
 
 #by matthias
-class TodoHandler:
+class TodoHandler(BaseHandler):
 
-    def __init__(self, session: Session): # Initialisierung der TodoHandler-Klasse mit einer SQLModel-Session
-        self.session = session
-
-    def save(self, todo: Todo) -> Todo:
-        self.session.add(todo)          # Hinzufügen des Todo-Objekts zur Session
-        self.session.commit()           # Speichern der Änderungen in der Datenbank
-        self.session.refresh(todo)    # Aktualisieren des Todo-Objekts mit den Daten aus der Datenbank (z.B. ID)
-        return todo
-
-    # Löschen eines To-Dos anhand seiner ID
-    def delete(self, todo_id: int) -> bool:
-        todo = self.session.get(Todo, todo_id)
-        if not todo:
-            return False
-
-        self.session.delete(todo)
-        self.session.commit()
-        return True
-
-    # Abrufen eines To-Dos anhand seiner ID
-    def get_by_id(self, todo_id: int) -> Optional[Todo]:
-        return self.session.get(Todo, todo_id)
-
-    # Abrufen aller To-Dos aus der Datenbank
-    def get_all(self) -> list[Todo]:
-        return self.session.exec(select(Todo)).all()
+# Festlegen des Modells, das von diesem Handler verwaltet wird
+    model = Todo
 
     # Aktualisieren eines To-Dos anhand seiner ID und optionaler Felder
     def update(
