@@ -1,135 +1,134 @@
 from nicegui import ui, app
+from fastapi import Request, Response
+from fastapi.responses import RedirectResponse
 from sqlmodel import Session
 
 from app.database.database import engine
-from app.services.TodoHandler import TodoHandler
-from app.services.TodoListHandler import TodoListHandler
 from app.services.UserHandler import UserHandler
-from app.models.todo import Todo, Status, Priority
+from app.services.TodoListHandler import TodoListHandler
+from app.services.TodoHandler import TodoHandler
+from app.models.user import User
+from app.models.todo import Todo
+
+from app.ui.session import _get_user_id, _create_session, _destroy_session
+from app.ui.ui import TodoBoardPage
+
+# ─── NiceGUI Pages ────────────────────────────────────────────────────────────
+def _redirect_to_login():
+    ui.open('/login')
 
 
-class TodoBoardPage:
-    def __init__(self, user_id: int):
-        self.user_id = user_id
-        self.selected_list_id: int | None = None
-        self.search_text = ""
-        self.priority_filter = "all"
+@ui.page('/')
+def index_page():
+    ui.run_javascript("window.location.href = '/login';")
 
-        self.board_container = None
-        self.list_container = None
-        self.title_label = None
 
-    def load_lists(self):
-        with Session(engine) as session:
-            return TodoListHandler(session).get_lists_for_user(self.user_id)
+@ui.page('/login')
+def login_page():
+       # JavaScript code for handling login form submission
+        login_js = """(async function() {
+            const email = document.getElementById('login-email').value.trim();
+            const password = document.getElementById('login-password').value;
+            const btn = document.getElementById('login-btn');
+            const err = document.getElementById('login-error');
+            err.style.display = 'none';
+            if (!email || !password) { err.textContent = 'Bitte E-Mail und Passwort eingeben.'; err.style.display = 'block'; return; }
+            btn.disabled = true; btn.textContent = 'Einloggen…';
+            try {
+                const resp = await fetch('/api/auth/login', {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({email, password})
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    const id = data.user_id || '';
+                    window.location.href = `/todos/${id}`;
+                } else {
+                    err.textContent = data.error || 'Fehler beim Einloggen'; err.style.display = 'block';
+                }
+            } catch(e) {
+                err.textContent = 'Verbindungsfehler. Bitte erneut versuchen.'; err.style.display = 'block';
+            }
+            btn.disabled = false; btn.textContent = 'Einloggen';
+        })();"""
 
-    def load_todos(self):
-        if self.selected_list_id is None:
-            return []
+        with ui.column().classes('items-center justify-center h-screen'):
+                ui.label('ToDoList').classes('text-2xl font-bold')
+                with ui.card().classes('w-96 p-6'):
+                        ui.input('E-Mail').props('id=login-email placeholder=name@beispiel.ch')
+                        ui.input('Passwort').props('id=login-password type=password placeholder=••••••••')
+                        ui.label('').props('id=login-error').classes('text-negative').style('display:none')
+                        ui.button('Einloggen', on_click=lambda: ui.run_javascript(login_js)).props('id=login-btn').classes('w-full bg-yellow-400 text-black')
+                        ui.link('Registrieren', '/register')
 
-        with Session(engine) as session:
-            todos = TodoHandler(session).get_todos_for_list(self.selected_list_id)
 
-        if self.search_text:
-            todos = [
-                todo for todo in todos
-                if self.search_text.lower() in todo.title.lower()
-                or self.search_text.lower() in todo.labels.lower()
-            ]
+@ui.page('/register')
+def register_page():
+        register_js = """(async function() {
+            const firstname = document.getElementById('reg-firstname').value.trim();
+            const lastname  = document.getElementById('reg-lastname').value.trim();
+            const email     = document.getElementById('reg-email').value.trim();
+            const password  = document.getElementById('reg-password').value;
+            const password2 = document.getElementById('reg-password2').value;
+            const btn = document.getElementById('reg-btn');
+            const err = document.getElementById('reg-error');
+            err.style.display = 'none';
+            if (!firstname || !lastname || !email || !password) { err.textContent = 'Bitte alle Felder ausfüllen.'; err.style.display = 'block'; return; }
+            if (password.length < 8) { err.textContent = 'Das Passwort muss mindestens 8 Zeichen lang sein.'; err.style.display = 'block'; return; }
+            if (password !== password2) { err.textContent = 'Die Passwörter stimmen nicht überein.'; err.style.display = 'block'; return; }
+            btn.disabled = true; btn.textContent = 'Registrieren…';
+            try {
+                const resp = await fetch('/api/auth/register', {
+                    method: 'POST', headers: {'Content-Type':'application/json'},
+                    body: JSON.stringify({firstname, lastname, email, password})
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    const id = data.user_id || '';
+                    window.location.href = `/todos/${id}`;
+                } else {
+                    err.textContent = data.error || 'Fehler bei der Registrierung'; err.style.display = 'block';
+                }
+            } catch(e) {
+                err.textContent = 'Verbindungsfehler. Bitte erneut versuchen.'; err.style.display = 'block';
+            }
+            btn.disabled = false; btn.textContent = 'Registrieren';
+        })();"""
 
-        if self.priority_filter != "all":
-            todos = [
-                todo for todo in todos
-                if todo.priority == self.priority_filter
-            ]
+        with ui.column().classes('items-center justify-center h-screen'):
+                ui.label('Registrierung').classes('text-2xl font-bold')
+                with ui.card().classes('w-96 p-6'):
+                        ui.input('Vorname').props('id=reg-firstname placeholder=Max')
+                        ui.input('Nachname').props('id=reg-lastname placeholder=Muster')
+                        ui.input('E-Mail').props('id=reg-email placeholder=name@beispiel.ch')
+                        ui.input('Passwort').props('id=reg-password type=password placeholder=Mindestens 8 Zeichen')
+                        ui.input('Passwort wiederholen').props('id=reg-password2 type=password placeholder=Passwort bestätigen')
+                        ui.label('').props('id=reg-error').classes('text-negative').style('display:none')
+                        ui.button('Registrieren', on_click=lambda: ui.run_javascript(register_js)).props('id=reg-btn').classes('w-full bg-yellow-400 text-black')
+                        ui.link('Einloggen', '/login')
 
-        return todos
 
-    def render(self):
-        ui.query(".nicegui-content").classes("p-0")
+@ui.page('/todos')
+def todos_page(request=None):
+    # Use FastAPI request to get session cookie (injected by NiceGUI/FastAPI)
+    # If request not provided by NiceGUI, fall back to redirect to login.
+    try:
+        # fastapi.Request may be passed in by NiceGUI
+        user_id = None
+        if request is not None:
+            # request may be a starlette.requests.Request
+            user = request
+            from app.ui.session import _get_user_id as _get
+            user_id = _get(request)
+    except Exception:
+        user_id = None
 
-        with ui.row().classes("w-full h-screen no-wrap bg-white"):
-            self.render_sidebar()
+    if not user_id:
+        ui.run_javascript("window.location.href = '/login';")
+        return
 
-            with ui.column().classes("flex-1 h-full no-wrap"):
-                self.render_topbar()
-                self.render_tabs()
-                self.board_container = ui.row().classes(
-                    "w-full flex-1 items-start gap-5 p-6 overflow-x-auto bg-white"
-                )
-
-        self.refresh_board()
-
-    def render_sidebar(self):
-        with ui.column().classes(
-            "w-80 h-full border-r border-gray-200 bg-white p-0 no-wrap"
-        ):
-            with ui.row().classes("w-full items-center gap-3 px-5 py-4 border-b border-gray-200"):
-                ui.label("n|w").classes(
-                    "bg-yellow-400 text-black font-black px-3 py-2 rounded text-xl"
-                )
-                ui.label("ToDoList").classes("font-bold text-lg")
-
-            ui.label("ARBEITSBEREICH").classes(
-                "text-xs font-bold text-gray-500 tracking-widest px-5 pt-6"
-            )
-
-            self.sidebar_item("Board", active=True)
-            self.sidebar_item("Liste")
-            self.sidebar_item("Zeitplan")
-            self.sidebar_item("Kalender")
-            self.sidebar_item("Projektstatus")
-
-            ui.label("PROJEKTLISTEN").classes(
-                "text-xs font-bold text-gray-500 tracking-widest px-5 pt-8"
-            )
-
-            self.list_container = ui.column().classes("w-full gap-1 px-2")
-            self.refresh_lists()
-
-            ui.space()
-
-            ui.button(
-                "+ Neue Liste",
-                on_click=self.open_create_list_dialog,
-            ).props("flat").classes("mx-3 mb-4 text-yellow-600 justify-start")
-
-    def sidebar_item(self, text: str, active: bool = False):
-        classes = "w-full justify-start px-5 py-3 rounded-lg"
-        if active:
-            classes += " bg-yellow-100 text-black font-semibold"
-        else:
-            classes += " text-gray-600"
-
-        ui.button(text).props("flat").classes(classes)
-
-    def refresh_lists(self):
-        self.list_container.clear()
-
-        lists = self.load_lists()
-
-        if lists and self.selected_list_id is None:
-            self.selected_list_id = lists[0].id
-
-        with self.list_container:
-            for todo_list in lists:
-                active = todo_list.id == self.selected_list_id
-
-                def select_list(list_id=todo_list.id):
-                    self.selected_list_id = list_id
-                    self.refresh_lists()
-                    self.refresh_board()
-                    if self.title_label:
-                        self.title_label.set_text(todo_list.name)
-
-                ui.button(
-                    todo_list.name,
-                    on_click=select_list,
-                ).props("flat").classes(
-                    "w-full justify-start rounded-lg "
-                    + ("bg-yellow-100 text-yellow-700 font-semibold" if active else "text-gray-600")
-                )
-
+    page = TodoBoardPage(user_id)
+    page.render()
     def render_topbar(self):
         with ui.row().classes(
             "w-full items-center gap-4 px-6 py-4 border-b border-gray-200 bg-white"
@@ -408,4 +407,3 @@ class TodoBoardPage:
         dialog.close()
         self.refresh_lists()
         self.refresh_board()
-
