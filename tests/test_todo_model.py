@@ -14,72 +14,32 @@ def test_update_with_invalid_priority_raises_value_error(session, sample_todo):
     with pytest.raises(ValueError):
         handler.update(sample_todo.id, priority="banane")
 
-# Happy Path: Status wechselt von Backlog zu To-Do
-def test_toggle_status_changes_backlog_to_todo():
+# Toggle Status zusammengefügt
+@pytest.mark.parametrize("initial_status, expected_status", [
+    (Status.BACKLOG, Status.TODO),
+    (Status.TODO, Status.IN_PROGRESS),
+    (Status.IN_PROGRESS, Status.DONE),
+    (Status.DONE, Status.BACKLOG),
+])
+
+# Happy Path: toggle_status wechselt den Status in der richtigen Reihenfolge
+def test_toggle_status_cycles_through_all_statuses(initial_status, expected_status):
     # Arrange
     todo = Todo(
         title="ORM lernen",
-        status=Status.BACKLOG,
+        status=initial_status,
         priority=Priority.HIGH,
     )
-
     # Act
     todo.toggle_status()
-
     # Assert
-    assert todo.status == Status.TODO
+    assert todo.status == expected_status
 
-
-# Happy Path: Status wechselt von To-Do zu In Progress
-def test_toggle_status_changes_todo_to_in_progress():
-    # Arrange
-    todo = Todo(
-        title="ORM lernen",
-        status=Status.TODO,
-        priority=Priority.HIGH,
-    )
-
-    # Act
-    todo.toggle_status()
-
-    # Assert
-    assert todo.status == Status.IN_PROGRESS
-
-
-# Happy Path: Status wechselt von In Progress zu Done
-def test_toggle_status_changes_in_progress_to_done():
-    # Arrange
-    todo = Todo(
-        title="ORM lernen",
-        status=Status.IN_PROGRESS,
-        priority=Priority.HIGH,
-    )
-
-    # Act
-    todo.toggle_status()
-
-    # Assert
-    assert todo.status == Status.DONE
-
-
-# Edge Case: Status Done springt wieder auf Backlog zurück
-def test_toggle_status_cycles_done_back_to_backlog():
-    # Arrange
-    todo = Todo(
-        title="ORM lernen",
-        status=Status.DONE,
-        priority=Priority.HIGH,
-    )
-
-    # Act
-    todo.toggle_status()
-
-    # Assert
-    assert todo.status == Status.BACKLOG
-
+# Progress Update zusammengefügt
+@pytest.mark.parametrize("valid_value", [0, 25, 50, 100])
 
 # Happy Path: Fortschritt wird mit gültigem Wert aktualisiert
-def test_update_progress_sets_valid_value():
+def test_update_progress_with_valid_values(valid_value):
     # Arrange
     todo = Todo(
         title="ORM lernen",
@@ -88,11 +48,22 @@ def test_update_progress_sets_valid_value():
     )
 
     # Act
-    todo.update_progress(75)
+    todo.update_progress(valid_value)
 
     # Assert
-    assert todo.progress == 75
+    assert todo.progress == valid_value
 
+# Edge Case: Ungültige Fortschrittswerte werden ignoriert
+@pytest.mark.parametrize("invalid_value", [-1, -5, 101, 150])
+def test_update_progress_ignores_invalid_values(invalid_value):
+    # Arrange
+    todo = Todo(title="ORM lernen", progress=10, priority=Priority.LOW)
+    
+    # Act
+    todo.update_progress(invalid_value)
+    
+    # Assert
+    assert todo.progress == 10
 
 # Edge Case: Fortschritt 0 ist ein gültiger Grenzwert
 def test_update_progress_allows_zero():
@@ -178,14 +149,19 @@ def test_update_progress_ignores_value_above_100():
     # Assert
     assert todo.progress == 10
 
+@pytest.mark.parametrize("status, due_date, expected", [
+    (Status.BACKLOG, None, False),
+    (Status.TODO, date.today() - timedelta(days=1), True),
+    (Status.TODO, date.today() + timedelta(days=3), False),
+    (Status.DONE, date.today() - timedelta(days=1), False),
+])
 
-# Edge Case: Ohne Due Date ist ein Todo nie überfällig
-def test_is_overdue_returns_false_when_due_date_is_none():
+def test_is_overdue(status, due_date, expected):
     # Arrange
     todo = Todo(
         title="ORM lernen",
-        status=Status.BACKLOG,
-        due_date=None,
+        status=status,
+        due_date=due_date,
         priority=Priority.HIGH,
     )
 
@@ -193,58 +169,7 @@ def test_is_overdue_returns_false_when_due_date_is_none():
     result = todo.is_overdue()
 
     # Assert
-    assert result is False
-
-
-# Happy Path: Vergangenes Due Date und nicht Done => überfällig
-def test_is_overdue_returns_true_for_past_due_date_and_open_status():
-    # Arrange
-    todo = Todo(
-        title="ORM lernen",
-        status=Status.TODO,
-        due_date=date.today() - timedelta(days=1),
-        priority=Priority.HIGH,
-    )
-
-    # Act
-    result = todo.is_overdue()
-
-    # Assert
-    assert result is True
-
-
-# Happy Path: Zukünftiges Due Date => nicht überfällig
-def test_is_overdue_returns_false_for_future_due_date():
-    # Arrange
-    todo = Todo(
-        title="ORM lernen",
-        status=Status.TODO,
-        due_date=date.today() + timedelta(days=3),
-        priority=Priority.HIGH,
-    )
-
-    # Act
-    result = todo.is_overdue()
-
-    # Assert
-    assert result is False
-
-
-# Edge Case: Vergangenes Due Date, aber Status Done => nicht überfällig
-def test_is_overdue_returns_false_when_todo_is_done():
-    # Arrange
-    todo = Todo(
-        title="ORM lernen",
-        status=Status.DONE,
-        due_date=date.today() - timedelta(days=1),
-        priority=Priority.HIGH,
-    )
-
-    # Act
-    result = todo.is_overdue()
-
-    # Assert
-    assert result is False
+    assert result == expected
 
 # Magic-Method Happy Path __str__ gibt Titel und Status zurück
 def test_str_returns_title_and_status():

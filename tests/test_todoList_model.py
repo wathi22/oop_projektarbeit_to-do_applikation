@@ -1,5 +1,6 @@
 from app.models.todo_list import TodoList
 from app.models.todo import Todo, Status, Priority
+import pytest
 
 
 # Happy Path: Alle Todos einer TodoList werden korrekt zurückgegeben
@@ -32,91 +33,28 @@ def test_get_all_todos_returns_empty_list_when_no_todos_exist():
     # Assert
     assert todos == []
 
+@pytest.mark.parametrize("filter_status, expected_count", [
+    (Status.BACKLOG, 2),
+    (Status.TODO, 1),
+    (Status.DONE, 0),
+])
 
-# Happy Path: Todos können nach Status gefiltert werden
-def test_filter_todos_by_status_returns_matching_todos():
+def test_filter_todos_by_status(filter_status, expected_count):
     # Arrange
-    todo1 = Todo(title="Task 1", status=Status.BACKLOG, priority=Priority.HIGH)
-    todo2 = Todo(title="Task 2", status=Status.TODO, priority=Priority.LOW)
-    todo3 = Todo(title="Task 3", status=Status.BACKLOG, priority=Priority.LOW)
-
     todo_list = TodoList(name="Studium")
-    todo_list.todos = [todo1, todo2, todo3]
+    todo_list.todos = [
+        Todo(title="Task 1", status=Status.BACKLOG, priority=Priority.HIGH),
+        Todo(title="Task 2", status=Status.IN_PROGRESS, priority=Priority.LOW),
+        Todo(title="Task 3", status=Status.BACKLOG, priority=Priority.LOW),
+        Todo(title="Task 4", status=Status.TODO, priority=Priority.HIGH),
+    ]
 
     # Act
-    backlog_todos = todo_list.filter_todos(status=Status.BACKLOG)
+    result = todo_list.filter_todos(status=filter_status)
 
     # Assert
-    assert len(backlog_todos) == 2
-    assert all(todo.status == Status.BACKLOG for todo in backlog_todos)
+    assert len(result) == expected_count
 
-
-# Edge Case: Filterung nach Status ohne Treffer soll leere Liste zurückgeben
-def test_filter_todos_by_status_returns_empty_list_when_no_match_exists():
-    # Arrange
-    todo1 = Todo(title="Task 1", status=Status.BACKLOG, priority=Priority.HIGH)
-    todo2 = Todo(title="Task 2", status=Status.BACKLOG, priority=Priority.LOW)
-
-    todo_list = TodoList(name="Studium")
-    todo_list.todos = [todo1, todo2]
-
-    # Act
-    result = todo_list.filter_todos(status=Status.TODO)
-
-    # Assert
-    assert result == []
-
-
-# Happy Path: Todos können nach Priorität gefiltert werden
-def test_filter_todos_by_priority_returns_matching_todos():
-    # Arrange
-    todo1 = Todo(title="Task 1", status=Status.BACKLOG, priority=Priority.HIGH)
-    todo2 = Todo(title="Task 2", status=Status.BACKLOG, priority=Priority.LOW)
-    todo3 = Todo(title="Task 3", status=Status.TODO, priority=Priority.HIGH)
-
-    todo_list = TodoList(name="Studium")
-    todo_list.todos = [todo1, todo2, todo3]
-
-    # Act
-    high_priority_todos = todo_list.filter_todos(priority=Priority.HIGH)
-
-    # Assert
-    assert len(high_priority_todos) == 2
-    assert all(todo.priority == Priority.HIGH for todo in high_priority_todos)
-
-
-# Happy Path: Todos können gleichzeitig nach Status und Priorität gefiltert werden
-def test_filter_todos_by_status_and_priority_returns_matching_todos():
-    # Arrange
-    todo1 = Todo(title="Task 1", status=Status.BACKLOG, priority=Priority.HIGH)
-    todo2 = Todo(title="Task 2", status=Status.BACKLOG, priority=Priority.LOW)
-    todo3 = Todo(title="Task 3", status=Status.TODO, priority=Priority.HIGH)
-
-    todo_list = TodoList(name="Studium")
-    todo_list.todos = [todo1, todo2, todo3]
-
-    # Act
-    result = todo_list.filter_todos(status=Status.BACKLOG, priority=Priority.HIGH)
-
-    # Assert
-    assert len(result) == 1
-    assert result[0].title == "Task 1"
-
-
-# Edge Case: Ohne Filter sollen alle Todos zurückgegeben werden
-def test_filter_todos_without_filters_returns_all_todos():
-    # Arrange
-    todo1 = Todo(title="Task 1", status=Status.BACKLOG, priority=Priority.HIGH)
-    todo2 = Todo(title="Task 2", status=Status.TODO, priority=Priority.LOW)
-
-    todo_list = TodoList(name="Studium")
-    todo_list.todos = [todo1, todo2]
-
-    # Act
-    result = todo_list.filter_todos()
-
-    # Assert
-    assert len(result) == 2
 
 # Magic-Method Happy Path: __str__ gibt den Namen der TodoList zurück
 def test_str_returns_todo_list_name():

@@ -21,7 +21,10 @@ class TodoListHandler(BaseHandler):
             return None
 
         if name is not None:
+            if not name.strip():
+                raise ValueError("TodoList name cannot be empty")
             todo_list.name = name
+
         if owner_id is not None:
             todo_list.owner_id = owner_id
 
@@ -36,5 +39,7 @@ class TodoListHandler(BaseHandler):
 
     # Erstellen einer neuen To-Do-Liste für einen bestimmten Benutzer
     def create_list(self, user_id: int, name: str) -> TodoList:
+        if not name.strip():
+            raise ValueError("TodoList name cannot be empty")
         new_todo_list = TodoList(name=name, owner_id=user_id)
         return self.save(new_todo_list)
