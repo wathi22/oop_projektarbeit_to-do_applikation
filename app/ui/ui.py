@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from nicegui import ui, app
 from sqlmodel import Session
 
@@ -6,6 +8,18 @@ from app.services.TodoHandler import TodoHandler
 from app.services.TodoListHandler import TodoListHandler
 from app.services.UserHandler import UserHandler
 from app.models.todo import Todo, Status, Priority
+import app.ui.draganddrop as dnd
+import datetime
+
+
+@dataclass
+class ToDo:
+    title: str
+
+
+def handle_drop(todo: ToDo, location: str) -> None:
+    ui.notify(f'"{todo.title}" is now in {location}')
+
 
 def get_current_user_id() -> int | None:
     return app.storage.user.get("user_id")
@@ -19,52 +33,6 @@ def index_page():
         ui.navigate.to("/login")
 
 
-@ui.page("/login")
-def login_page():
-    ui.query(".nicegui-content").classes(
-        "w-full h-screen flex items-center justify-center bg-gray-50"
-    )
-
-    with ui.card().classes("w-96 p-8"):
-        ui.label("ToDoList Login").classes("text-2xl font-bold mb-4")
-
-        email_input = ui.input("E-Mail").props("outlined").classes("w-full")
-        password_input = ui.input("Passwort", password=True).props("outlined").classes("w-full")
-
-        def login():
-            print("LOGIN BUTTON WURDE GEKLICKT")
-
-            email = (email_input.value or "").strip()
-            password = password_input.value or ""
-
-            print("E-Mail:", email)
-
-            if not email or not password:
-                ui.notify("Bitte E-Mail und Passwort eingeben.", color="negative")
-                return
-
-            with Session(engine) as session:
-                user = UserHandler(session).get_by_email(email)
-
-            if not user:
-                ui.notify("User nicht gefunden.", color="negative")
-                return
-
-            if not user.check_password(password):
-                ui.notify("Passwort falsch.", color="negative")
-                return
-
-            app.storage.user["user_id"] = user.id
-            app.storage.user["user_name"] = user.full_name()
-
-            ui.notify("Login erfolgreich.", color="positive")
-            ui.navigate.to("/todos")
-
-        ui.button("Einloggen", on_click=login).classes(
-            "w-full bg-yellow-400 text-black font-bold mt-4"
-        )
-
-
 @ui.page("/todos")
 def todos_page():
     user_id = get_current_user_id()
@@ -73,8 +41,19 @@ def todos_page():
         ui.navigate.to("/login")
         return
 
-    ui.label("Todo-Seite funktioniert").classes("text-3xl font-bold")
+    ui.label("Willkommen auf deiner Todo-Seite!").classes("text-3xl font-bold")
     ui.label(f"Eingeloggt als User-ID: {user_id}")
+
+    with ui.row():
+        with dnd.column("Backlog", on_drop=handle_drop):
+            dnd.card(ToDo("Präsentation erstellen"))
+            dnd.card(ToDo("Dokumentation schreiben"))
+        with dnd.column("Doing", on_drop=handle_drop):
+            dnd.card(ToDo("NiceGUI design erstellen"))
+        with dnd.column("Done", on_drop=handle_drop):
+            dnd.card(ToDo("Datenbank anbinden"))
+            dnd.card(ToDo("models erstellen"))
+            dnd.card(ToDo("services erstellen"))
 
     ui.button(
         "Abmelden",
@@ -487,4 +466,3 @@ class TodoBoardPage:
         dialog.close()
         self.refresh_lists()
         self.refresh_board()
-
