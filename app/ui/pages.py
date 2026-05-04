@@ -20,47 +20,36 @@ def _redirect_to_login():
 
 @ui.page('/')
 def index_page():
-    ui.run_javascript("window.location.href = '/login';")
+    ui.navigate.to('/login')
 
 
 @ui.page('/login')
 def login_page():
-       # JavaScript code for handling login form submission
-        login_js = """(async function() {
-            const email = document.getElementById('login-email').value.trim();
-            const password = document.getElementById('login-password').value;
-            const btn = document.getElementById('login-btn');
-            const err = document.getElementById('login-error');
-            err.style.display = 'none';
-            if (!email || !password) { err.textContent = 'Bitte E-Mail und Passwort eingeben.'; err.style.display = 'block'; return; }
-            btn.disabled = true; btn.textContent = 'Einloggen…';
-            try {
-                const resp = await fetch('/api/auth/login', {
-                    method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({email, password})
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    const id = data.user_id || '';
-                    window.location.href = `/todos/${id}`;
-                } else {
-                    err.textContent = data.error || 'Fehler beim Einloggen'; err.style.display = 'block';
-                }
-            } catch(e) {
-                err.textContent = 'Verbindungsfehler. Bitte erneut versuchen.'; err.style.display = 'block';
-            }
-            btn.disabled = false; btn.textContent = 'Einloggen';
-        })();"""
+    def do_login():
+        error_label.set_visibility(False)            
+        if not email_input.value.strip() or not password_input.value:
+            error_label.set_text('Bitte E-Mail und Passwort eingeben.')
+            error_label.set_visibility(True)
+            return
+        with Session(engine) as session:
+            user = UserHandler(session).get_by_email(email_input.value.strip())
+            if user and user.check_password(password_input.value):
+                app.storage.user['user_id'] = user.id  # Speichere user_id in NiceGUI's globalem Storage
+                ui.navigate.to(f'/todos/{user.id}')  # Navigiere zu /todos/{user_id}
+            else:
+                error_label.set_text('Ungültige E-Mail oder Passwort.')
+                error_label.set_visibility(True)
+                
 
-        with ui.column().classes('items-center justify-center h-screen'):
-                ui.label('ToDoList').classes('text-2xl font-bold')
-                with ui.card().classes('w-96 p-6'):
-                        ui.input('E-Mail').props('id=login-email placeholder=name@beispiel.ch')
-                        ui.input('Passwort').props('id=login-password type=password placeholder=••••••••')
-                        ui.label('').props('id=login-error').classes('text-negative').style('display:none')
-                        ui.button('Einloggen', on_click=lambda: ui.run_javascript(login_js)).props('id=login-btn').classes('w-full bg-yellow-400 text-black')
-                        ui.link('Registrieren', '/register')
-
+    with ui.column().classes('items-center justify-center h-screen'):
+        ui.label('ToDoList').classes('text-2xl font-bold')
+        with ui.card().classes('w-96 p-6'):
+            email_input = ui.input('E-Mail', placeholder='name@beispiel.ch')
+            password_input = ui.input('Passwort', placeholder='Passwort',).props('type=password') 
+            error_label = ui.label('').classes('text-negative')
+            error_label.set_visibility(False)
+            ui.button ('Einloggen', on_click=do_login).classes('w-full bg-yellow-400 text-black')
+            ui.link('Registrieren', '/register')
 
 @ui.page('/register')
 def register_page():
