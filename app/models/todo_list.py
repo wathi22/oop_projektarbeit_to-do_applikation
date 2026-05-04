@@ -16,6 +16,12 @@ class TodoList(SQLModel, table=True):
     owner: Optional["User"] = Relationship(back_populates="todo_lists")
     todos: List["Todo"] = Relationship(back_populates="todo_list")
 
+    def add_todo(self, todo: "Todo") -> None:
+        self.todos.append(todo)
+
+    def remove_todo(self, todo_id: int) -> None:
+        self.todos = [todo for todo in self.todos if todo.id != todo_id]
+
     def get_all_todos(self) -> list["Todo"]:
         return self.todos
 
@@ -27,10 +33,18 @@ class TodoList(SQLModel, table=True):
         filtered = self.todos
 
         if status is not None:
-            filtered = [todo for todo in filtered if todo.status == status]
+            status_value = getattr(status, "value", status)
+            filtered = [
+                todo for todo in filtered
+                if getattr(todo.status, "value", todo.status) == status_value
+            ]
 
         if priority is not None:
-            filtered = [todo for todo in filtered if todo.priority == priority]
+            priority_value = getattr(priority, "value", priority)
+            filtered = [
+                todo for todo in filtered
+                if getattr(todo.priority, "value", todo.priority) == priority_value
+            ]
 
         return filtered
     

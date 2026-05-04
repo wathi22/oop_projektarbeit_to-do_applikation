@@ -54,8 +54,17 @@ class TodoHandler(BaseHandler):
         return todo
 
     # Abrufen aller To-Dos einer bestimmten To-Do-Liste anhand ihrer ID
-    def get_todos_for_list(self, todo_list_id: int) -> list[Todo]:
+    def get_todos_for_list(
+        self,
+        todo_list_id: int,
+        status_filter: Optional[str] = None,
+        priority_filter: Optional[str] = None,
+    ) -> list[Todo]:
         statement = select(Todo).where(Todo.todo_list_id == todo_list_id)
+        if status_filter is not None:
+            statement = statement.where(Todo.status == Status(status_filter))
+        if priority_filter is not None:
+            statement = statement.where(Todo.priority == Priority(priority_filter))
         return self.session.exec(statement).all()
 
     # Umschalten des Status eines To-Dos zwischen "offen" und "erledigt"

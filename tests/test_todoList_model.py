@@ -3,6 +3,35 @@ from app.models.todo import Todo, Status, Priority
 import pytest
 
 
+# Happy Path: Ein Todo wird einer TodoList hinzugefuegt
+def test_add_todo_appends_todo():
+    # Arrange
+    todo_list = TodoList(name="Studium")
+    todo_list.todos = []
+    todo = Todo(id=1, title="ORM lernen", status=Status.BACKLOG, priority=Priority.HIGH)
+
+    # Act
+    todo_list.add_todo(todo)
+
+    # Assert
+    assert todo_list.todos == [todo]
+
+
+# Happy Path: Ein Todo wird anhand der ID aus der TodoList entfernt
+def test_remove_todo_removes_matching_todo_id():
+    # Arrange
+    todo1 = Todo(id=1, title="Task 1", status=Status.BACKLOG, priority=Priority.HIGH)
+    todo2 = Todo(id=2, title="Task 2", status=Status.TODO, priority=Priority.LOW)
+    todo_list = TodoList(name="Studium")
+    todo_list.todos = [todo1, todo2]
+
+    # Act
+    todo_list.remove_todo(1)
+
+    # Assert
+    assert todo_list.todos == [todo2]
+
+
 # Happy Path: Alle Todos einer TodoList werden korrekt zurückgegeben
 def test_get_all_todos_returns_all_todos():
     # Arrange
@@ -54,6 +83,41 @@ def test_filter_todos_by_status(filter_status, expected_count):
 
     # Assert
     assert len(result) == expected_count
+
+# Happy Path: Todos koennen nach Prioritaet gefiltert werden
+def test_filter_todos_by_priority():
+    # Arrange
+    todo_list = TodoList(name="Studium")
+    todo_list.todos = [
+        Todo(title="Task 1", status=Status.BACKLOG, priority=Priority.HIGH),
+        Todo(title="Task 2", status=Status.IN_PROGRESS, priority=Priority.LOW),
+        Todo(title="Task 3", status=Status.TODO, priority=Priority.HIGH),
+    ]
+
+    # Act
+    result = todo_list.filter_todos(priority=Priority.HIGH)
+
+    # Assert
+    assert len(result) == 2
+    assert all(todo.priority == Priority.HIGH for todo in result)
+
+
+# Happy Path: Status und Prioritaet koennen kombiniert gefiltert werden
+def test_filter_todos_by_status_and_priority():
+    # Arrange
+    todo_list = TodoList(name="Studium")
+    todo_list.todos = [
+        Todo(title="Task 1", status=Status.BACKLOG, priority=Priority.HIGH),
+        Todo(title="Task 2", status=Status.BACKLOG, priority=Priority.LOW),
+        Todo(title="Task 3", status=Status.TODO, priority=Priority.HIGH),
+    ]
+
+    # Act
+    result = todo_list.filter_todos(status=Status.BACKLOG, priority=Priority.HIGH)
+
+    # Assert
+    assert len(result) == 1
+    assert result[0].title == "Task 1"
 
 
 # Magic-Method Happy Path: __str__ gibt den Namen der TodoList zurück

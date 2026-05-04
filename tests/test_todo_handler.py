@@ -228,6 +228,62 @@ def test_get_todos_for_list_returns_empty_list_when_no_todos_exist(session, samp
     assert result == []
 
 
+# Happy Path: Todos einer Liste koennen nach Status gefiltert werden
+def test_get_todos_for_list_filters_by_status(session, sample_todo_list):
+    # Arrange
+    todo_handler = TodoHandler(session)
+    todo_handler.save(Todo(
+        title="Task 1",
+        priority=Priority.HIGH,
+        status=Status.BACKLOG,
+        todo_list_id=sample_todo_list.id,
+    ))
+    todo_handler.save(Todo(
+        title="Task 2",
+        priority=Priority.LOW,
+        status=Status.DONE,
+        todo_list_id=sample_todo_list.id,
+    ))
+
+    # Act
+    result = todo_handler.get_todos_for_list(
+        sample_todo_list.id,
+        status_filter=Status.DONE,
+    )
+
+    # Assert
+    assert len(result) == 1
+    assert result[0].status == Status.DONE
+
+
+# Happy Path: Todos einer Liste koennen nach Prioritaet gefiltert werden
+def test_get_todos_for_list_filters_by_priority(session, sample_todo_list):
+    # Arrange
+    todo_handler = TodoHandler(session)
+    todo_handler.save(Todo(
+        title="Task 1",
+        priority=Priority.HIGH,
+        status=Status.BACKLOG,
+        todo_list_id=sample_todo_list.id,
+    ))
+    todo_handler.save(Todo(
+        title="Task 2",
+        priority=Priority.LOW,
+        status=Status.BACKLOG,
+        todo_list_id=sample_todo_list.id,
+    ))
+
+    # Act
+    result = todo_handler.get_todos_for_list(
+        sample_todo_list.id,
+        priority_filter=Priority.HIGH,
+    )
+
+    # Assert
+    assert len(result) == 1
+    assert result[0].priority == Priority.HIGH
+
+
 # Happy Path: Der Status eines Todos wird erfolgreich weitergeschaltet
 def test_toggle_status_changes_todo_status(session, sample_todo):
     # Arrange

@@ -116,6 +116,17 @@ def _apply_js_data(todo: Todo, data: dict) -> None:
     todo.due_date = date.fromisoformat(due) if due else None
 
 
+def _user_owns_list(session: Session, user_id: int, list_id: int) -> bool:
+    todo_list = TodoListHandler(session).get_by_id(list_id)
+    return bool(todo_list and todo_list.owner_id == user_id)
+
+
+def _user_owns_todo(session: Session, user_id: int, todo: Todo) -> bool:
+    if todo.todo_list_id is None:
+        return False
+    return _user_owns_list(session, user_id, todo.todo_list_id)
+
+
 # ─── Pydantic models ────────────────────────────────────────────────────────────
 
 class LoginData(BaseModel):
@@ -252,6 +263,8 @@ async def api_delete_list(list_id: int, request: Request):
     if not user_id:
         return {"error": "Nicht autorisiert"}
     with Session(engine) as session:
+        if not _user_owns_list(session, user_id, list_id):
+            return {"error": "Nicht gefunden"}
         TodoListHandler(session).delete(list_id)
     return {"success": True}
 
@@ -266,6 +279,8 @@ async def api_get_todos(request: Request, list_id: int | None = None):
     with Session(engine) as session:
         handler = TodoHandler(session)
         if list_id:
+            if not _user_owns_list(session, user_id, list_id):
+                return []
             todos = handler.get_todos_for_list(list_id)
         else:
             lists = TodoListHandler(session).get_lists_for_user(user_id)
@@ -281,17 +296,19 @@ async def api_create_todo(data: TodoData, request: Request):
     if not user_id:
         return {"error": "Nicht autorisiert"}
     list_id = data.listId
-    if not list_id:
-        with Session(engine) as session:
+    with Session(engine) as session:
+        if list_id and not _user_owns_list(session, user_id, list_id):
+            return {"error": "Nicht gefunden"}
+
+        if not list_id:
             lists = TodoListHandler(session).get_lists_for_user(user_id)
             if lists:
                 list_id = lists[0].id
             else:
                 lst = TodoListHandler(session).create_list(user_id, "Meine Liste")
                 list_id = lst.id
-    todo = Todo(todo_list_id=list_id)
-    _apply_js_data(todo, data.model_dump())
-    with Session(engine) as session:
+        todo = Todo(todo_list_id=list_id)
+        _apply_js_data(todo, data.model_dump())
         saved = TodoHandler(session).save(todo)
         return _todo_to_js(saved)
 
@@ -306,6 +323,8 @@ async def api_update_todo(todo_id: int, data: TodoData, request: Request):
         todo = handler.get_by_id(todo_id)
         if not todo:
             return {"error": "Nicht gefunden"}
+        if not _user_owns_todo(session, user_id, todo):
+            return {"error": "Nicht gefunden"}
         _apply_js_data(todo, data.model_dump())
         session.add(todo)
         session.commit()
@@ -319,5 +338,8 @@ async def api_delete_todo(todo_id: int, request: Request):
     if not user_id:
         return {"error": "Nicht autorisiert"}
     with Session(engine) as session:
+        todo = TodoHandler(session).get_by_id(todo_id)
+        if not todo or not _user_owns_todo(session, user_id, todo):
+            return {"error": "Nicht gefunden"}
         TodoHandler(session).delete(todo_id)
     return {"success": True}
