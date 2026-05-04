@@ -77,7 +77,8 @@ window.doLogin = async function() {
     });
     const data = await resp.json();
     if (data.success) {
-      window.location.href = '/todos';
+      const id = data.user_id || '';
+      window.location.href = `/todos/${id}`;
     } else {
       window.showLoginError(data.error || 'Fehler beim Einloggen');
     }
@@ -194,7 +195,8 @@ window.doRegister = async function() {
     });
     const data = await resp.json();
     if (data.success) {
-      window.location.href = '/todos';
+      const id = data.user_id || '';
+      window.location.href = `/todos/${id}`;
     } else {
       window.showRegError(data.error || 'Fehler bei der Registrierung');
     }
