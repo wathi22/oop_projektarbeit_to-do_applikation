@@ -14,6 +14,40 @@ from app.ui.session import _get_user_id, _create_session, _destroy_session
 from app.ui.ui import TodoBoardPage
 import app.ui.draganddrop as dnd
 
+def _redirect_to_login():
+    ui.open('/login')
+
+
+@ui.page('/')
+def index_page():
+    if app.storage.user.get('user_id'):
+        ui.navigate.to('/todos')
+    else:
+        ui.navigate.to('/login')
+
+
+@ui.page('/login')
+def login_page():
+    def do_login():
+        error_label.set_visibility(False)
+        if not email_input.value.strip() or not password_input.value:
+            error_label.set_text('Bitte E-Mail und Passwort eingeben.')
+            error_label.set_visibility(True)
+            return
+
+        with Session(engine) as session:
+            user = UserHandler(session).get_by_email(email_input.value.strip())
+
+        if user and user.check_password(password_input.value):
+            app.storage.user['user_id'] = user.id
+            app.storage.user['user_name'] = user.full_name()
+            ui.navigate.to('/todos')
+            return
+
+        error_label.set_text('Ungültige E-Mail oder Passwort.')
+        error_label.set_visibility(True)
+    
+    
 @ui.page("/login")
 def login_page():
     ui.query(".nicegui-content").classes(
@@ -75,7 +109,7 @@ def login_page():
                 error_label.set_visibility(True)
                 
 
-    with ui.column().classes('items-center justify-center h-screen'):
+    with ui.column().classes('absolute-center items-center'):
         ui.label('ToDoList').classes('text-2xl font-bold')
         with ui.card().classes('w-96 p-6'):
             email_input = ui.input('E-Mail', placeholder='name@beispiel.ch')
