@@ -61,44 +61,14 @@ def login_page():
 
 @ui.page('/register')
 def register_page():
-        register_js = """(async function() {
-            const firstname = document.getElementById('reg-firstname').value.trim();
-            const lastname  = document.getElementById('reg-lastname').value.trim();
-            const email     = document.getElementById('reg-email').value.trim();
-            const password  = document.getElementById('reg-password').value;
-            const password2 = document.getElementById('reg-password2').value;
-            const btn = document.getElementById('reg-btn');
-            const err = document.getElementById('reg-error');
-            err.style.display = 'none';
-            if (!firstname || !lastname || !email || !password) { err.textContent = 'Bitte alle Felder ausfüllen.'; err.style.display = 'block'; return; }
-            if (password.length < 8) { err.textContent = 'Das Passwort muss mindestens 8 Zeichen lang sein.'; err.style.display = 'block'; return; }
-            if (password !== password2) { err.textContent = 'Die Passwörter stimmen nicht überein.'; err.style.display = 'block'; return; }
-            btn.disabled = true; btn.textContent = 'Registrieren…';
-            try {
-                const resp = await fetch('/api/auth/register', {
-                    method: 'POST', headers: {'Content-Type':'application/json'},
-                    body: JSON.stringify({firstname, lastname, email, password})
-                });
-                const data = await resp.json();
-                if (data.success) {
-                    window.location.href = '/todos';
-                } else {
-                    err.textContent = data.error || 'Fehler bei der Registrierung'; err.style.display = 'block';
-                }
-            } catch(e) {
-                err.textContent = 'Verbindungsfehler. Bitte erneut versuchen.'; err.style.display = 'block';
-            }
-            btn.disabled = false; btn.textContent = 'Registrieren';
-        })();"""
-
-        with ui.column().classes('items-center justify-center h-screen'):
+        with ui.column().classes('absolute-center items-center justify-center h-screen'):
                 ui.label('Registrierung').classes('text-2xl font-bold')
-                with ui.card().classes('w-96 p-6'):
-                        ui.input('Vorname').props('id=reg-firstname placeholder=Max')
-                        ui.input('Nachname').props('id=reg-lastname placeholder=Muster')
-                        ui.input('E-Mail').props('id=reg-email placeholder=name@beispiel.ch')
-                        ui.input('Passwort').props('id=reg-password type=password placeholder=Mindestens 8 Zeichen')
-                        ui.input('Passwort wiederholen').props('id=reg-password2 type=password placeholder=Passwort bestätigen')
+                with ui.card().classes('w-96 p-6 flex flex-col gap-4'):
+                        ui.input('Vorname').props('id=reg-firstname placeholder=Max' + ' outlined').classes('w-full')
+                        ui.input('Nachname').props('id=reg-lastname placeholder=Muster' + ' outlined').classes('w-full')
+                        ui.input('E-Mail').props('id=reg-email placeholder=name@beispiel.ch' + ' outlined').classes('w-full')
+                        ui.input('Passwort').props('id=reg-password type=password placeholder=Mindestens 8 Zeichen' + ' outlined').classes('w-full')
+                        ui.input('Passwort wiederholen').props('id=reg-password2 type=password placeholder=Passwort bestätigen' + ' outlined').classes('w-full')
                         ui.label('').props('id=reg-error').classes('text-negative').style('display:none')
-                        ui.button('Registrieren', on_click=lambda: ui.run_javascript(register_js)).props('id=reg-btn').classes('w-full bg-yellow-400 text-black')
-                        ui.link('Einloggen', '/login')
+                        ui.button('Registrieren', on_click=lambda: ui.run_javascript(register_js)).props('id=reg-btn').classes('w-full text-black font-bold')
+                        ui.link('Einloggen', '/login' ).classes('mt-4')

@@ -17,7 +17,6 @@ import app.ui.draganddrop as dnd
 def _redirect_to_login():
     ui.open('/login')
 
-
 @ui.page('/')
 def index_page():
     if app.storage.user.get('user_id'):
@@ -26,28 +25,6 @@ def index_page():
         ui.navigate.to('/login')
 
 
-@ui.page('/login')
-def login_page():
-    def do_login():
-        error_label.set_visibility(False)
-        if not email_input.value.strip() or not password_input.value:
-            error_label.set_text('Bitte E-Mail und Passwort eingeben.')
-            error_label.set_visibility(True)
-            return
-
-        with Session(engine) as session:
-            user = UserHandler(session).get_by_email(email_input.value.strip())
-
-        if user and user.check_password(password_input.value):
-            app.storage.user['user_id'] = user.id
-            app.storage.user['user_name'] = user.full_name()
-            ui.navigate.to('/todos')
-            return
-
-        error_label.set_text('Ungültige E-Mail oder Passwort.')
-        error_label.set_visibility(True)
-    
-    
 @ui.page("/login")
 def login_page():
     ui.query(".nicegui-content").classes(
