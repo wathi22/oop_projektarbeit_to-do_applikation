@@ -17,7 +17,7 @@ target: card | None = None
 class column(ui.column):
     def __init__(self, name: str, on_drop: Callable[[Item, str], None] | None = None) -> None:
         super().__init__()
-        with self.classes('bg-blue-grey-2 w-60 p-4 rounded shadow-2'):
+        with self.classes('bg-blue-2 w-60 p-4 rounded shadow-2'):
             ui.label(name).classes('text-bold ml-1')
         self.name = name
         self.on('dragover.prevent', self.highlight)
