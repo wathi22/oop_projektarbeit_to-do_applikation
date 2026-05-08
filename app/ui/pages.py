@@ -69,6 +69,5 @@ def register_page():
                         ui.input('E-Mail').props('id=reg-email placeholder=name@beispiel.ch' + ' outlined').classes('w-full')
                         ui.input('Passwort').props('id=reg-password type=password placeholder=Mindestens 8 Zeichen' + ' outlined').classes('w-full')
                         ui.input('Passwort wiederholen').props('id=reg-password2 type=password placeholder=Passwort bestätigen' + ' outlined').classes('w-full')
-                        ui.label('').props('id=reg-error').classes('text-negative').style('display:none')
-                        ui.button('Registrieren', on_click=lambda: ui.run_javascript(register_js)).props('id=reg-btn').classes('w-full text-black font-bold')
+                        ui.label('').props('id=reg-error').classes('text-negative').style('display:none')   
                         ui.link('Einloggen', '/login' ).classes('mt-4')
