@@ -53,7 +53,7 @@ def login_page():
         with ui.card().classes('w-96 p-6'):
             email_input = ui.input('E-Mail', placeholder='name@beispiel.ch').props('outlined').classes('w-full')
             password_input = ui.input('Passwort', placeholder='Passwort').props('type=password').props('outlined').classes('w-full')
-            password_input.on('keypress', lambda e: do_login() if e.key == 'Enter' else None)
+            password_input.on('keydown.enter', lambda e: do_login())
             error_label = ui.label('').classes('text-negative' + 'mb-4').style('display:none')
             error_label.set_visibility(False)
             ui.button('Einloggen', on_click=do_login).classes('w-full bg-yellow-400 text-black')
