@@ -53,8 +53,6 @@ class card(ui.card):
             priority = getattr(item, 'priority', None)
             progress = getattr(item, 'progress', None)
             labels = getattr(item, 'labels', None)
-            if item_id is not None:
-                details.append(f'ID {item_id}')
             if priority:
                 details.append(getattr(priority, 'value', priority))
             if progress:

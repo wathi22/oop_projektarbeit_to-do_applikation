@@ -5,7 +5,7 @@ from nicegui import ui
 
 from app.models.todo import Status, Todo
 from app.ui.layout import create_app_layout, get_or_create_default_todo_list, require_login
-from app.ui.pages.todo_board import load_todos, render_create_todo_dialog, update_todo_status
+from app.ui.pages.todo_board import load_todos, render_todo_dialog, update_todo_status
 
 
 def _month_days(month: date) -> list[date | None]:
@@ -27,11 +27,14 @@ def _status_color(status: Status) -> str:
         return "positive"
     if status == Status.IN_PROGRESS:
         return "warning"
+    if status == Status.TODO:
+        return "info"
     return "grey"
 
 
 def render_calendar_view(todo_list_id: int) -> None:
     current_month = date.today().replace(day=1)
+    open_edit_dialog = None
 
     def change_month(month_delta: int) -> None:
         nonlocal current_month
@@ -87,6 +90,10 @@ def render_calendar_view(todo_list_id: int) -> None:
                             ui.badge(todo.status.value).props(f"color={_status_color(todo.status)}")
                             if todo.priority:
                                 ui.badge(todo.priority.value).props("color=grey")
+                            ui.button(
+                                icon="edit",
+                                on_click=lambda todo=todo: open_edit_dialog(todo),
+                            ).props("flat round dense").tooltip("Todo bearbeiten")
                             if todo.status != Status.DONE:
                                 ui.button(icon="check", on_click=lambda todo=todo: mark_done(todo)).props(
                                     "flat round dense"
@@ -99,11 +106,13 @@ def render_calendar_view(todo_list_id: int) -> None:
                     with ui.item():
                         with ui.item_section():
                             ui.item_label(todo.title)
-                            ui.item_label(f"ID {todo.id} | {todo.status.value} | Fortschritt {todo.progress}%").props(
-                                "caption"
-                            )
+                            ui.item_label(f"{todo.status.value} | Fortschritt {todo.progress}%").props("caption")
+                        ui.button(
+                            icon="edit",
+                            on_click=lambda todo=todo: open_edit_dialog(todo),
+                        ).props("flat round dense").tooltip("Todo bearbeiten")
 
-    render_create_todo_dialog(todo_list_id, calendar.refresh)
+    open_edit_dialog = render_todo_dialog(todo_list_id, calendar.refresh)
     calendar()
 
 

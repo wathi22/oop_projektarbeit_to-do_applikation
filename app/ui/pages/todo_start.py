@@ -15,5 +15,5 @@ def todos_page():
 
     with ui.column().classes("w-full p-6 gap-4"):
         ui.label("Willkommen auf deiner Todo-Seite!").classes("text-3xl font-bold")
-        ui.label("Alle neuen Todos landen zuerst im Backlog.").classes("text-gray-600")
+        ui.label("Todos sind in Backlog, To-Do, In Progress und Done unterteilt.").classes("text-gray-600")
         render_todo_board(todo_list_id)

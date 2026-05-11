@@ -4,7 +4,7 @@ from nicegui import ui
 from sqlmodel import Session
 
 from app.database.database import engine
-from app.models.todo import Status, Todo
+from app.models.todo import Priority, Status, Todo
 from app.services.TodoHandler import TodoHandler
 from app.ui.layout import get_label_filter
 import app.ui.draganddrop as dnd
@@ -18,13 +18,15 @@ PRIORITY_OPTIONS = {
 
 STATUS_OPTIONS = {
     Status.BACKLOG.value: "Backlog",
-    Status.IN_PROGRESS.value: "Doing",
+    Status.TODO.value: "To-Do",
+    Status.IN_PROGRESS.value: "In Progress",
     Status.DONE.value: "Done",
 }
 
 COLUMNS = [
-    ("Backlog", (Status.BACKLOG, Status.TODO)),
-    ("Doing", (Status.IN_PROGRESS,)),
+    ("Backlog", (Status.BACKLOG,)),
+    ("To-Do", (Status.TODO,)),
+    ("In Progress", (Status.IN_PROGRESS,)),
     ("Done", (Status.DONE,)),
 ]
 
@@ -86,9 +88,42 @@ def update_todo_status(todo_id: int, status: Status) -> None:
         TodoHandler(session).update(todo_id, status=status.value, progress=progress)
 
 
-def render_create_todo_dialog(todo_list_id: int, on_created) -> None:
+def update_todo_details(
+    todo_id: int,
+    title: str,
+    description: str,
+    priority: str,
+    status: str,
+    progress: int,
+    start_date: date | None,
+    due_date: date | None,
+    labels: str,
+) -> None:
+    with Session(engine) as session:
+        todo = session.get(Todo, todo_id)
+        if not todo:
+            return
+
+        todo.title = title
+        todo.description = description
+        todo.priority = Priority(priority)
+        todo.status = Status(status)
+        todo.progress = progress
+        todo.start_date = start_date
+        todo.due_date = due_date
+        todo.labels = labels
+        session.commit()
+
+
+def _date_value(value: date | None) -> str | None:
+    return value.isoformat() if value else None
+
+
+def render_todo_dialog(todo_list_id: int, on_saved):
     title_input = description_input = start_date_input = due_date_input = labels_select = None
     priority_select = status_select = progress_slider = None
+    dialog_title = None
+    editing_todo_id: int | None = None
 
     def default_label() -> str:
         label_filter = get_label_filter()
@@ -97,6 +132,8 @@ def render_create_todo_dialog(todo_list_id: int, on_created) -> None:
         return "arbeit"
 
     def reset_form() -> None:
+        nonlocal editing_todo_id
+        editing_todo_id = None
         title_input.value = ""
         description_input.value = ""
         priority_select.value = "low"
@@ -105,6 +142,18 @@ def render_create_todo_dialog(todo_list_id: int, on_created) -> None:
         start_date_input.value = None
         due_date_input.value = date.today().isoformat()
         labels_select.value = default_label()
+
+    def fill_form(todo: Todo) -> None:
+        nonlocal editing_todo_id
+        editing_todo_id = todo.id
+        title_input.value = todo.title
+        description_input.value = todo.description
+        priority_select.value = todo.priority.value
+        status_select.value = todo.status.value
+        progress_slider.value = todo.progress
+        start_date_input.value = _date_value(todo.start_date)
+        due_date_input.value = _date_value(todo.due_date)
+        labels_select.value = todo.labels or default_label()
 
     def save_todo() -> None:
         title = (title_input.value or "").strip()
@@ -120,28 +169,51 @@ def render_create_todo_dialog(todo_list_id: int, on_created) -> None:
             ui.notify("Bitte gib einen Todo-Titel ein.", color="warning")
             return
 
-        create_todo(
-            todo_list_id=todo_list_id,
-            title=title,
-            description=description,
-            priority=priority,
-            status=status,
-            progress=progress,
-            start_date=start_date,
-            due_date=due_date,
-            labels=labels,
-        )
+        if editing_todo_id is None:
+            create_todo(
+                todo_list_id=todo_list_id,
+                title=title,
+                description=description,
+                priority=priority,
+                status=status,
+                progress=progress,
+                start_date=start_date,
+                due_date=due_date,
+                labels=labels,
+            )
+            ui.notify("Todo erstellt.", color="positive")
+        else:
+            update_todo_details(
+                todo_id=editing_todo_id,
+                title=title,
+                description=description,
+                priority=priority,
+                status=status,
+                progress=progress,
+                start_date=start_date,
+                due_date=due_date,
+                labels=labels,
+            )
+            ui.notify("Todo gespeichert.", color="positive")
 
-        ui.notify("Todo erstellt.", color="positive")
         dialog.close()
         reset_form()
-        on_created()
+        on_saved()
+
+    def open_create_dialog() -> None:
+        reset_form()
+        dialog_title.set_text("Neue Todo erfassen")
+        dialog.open()
+
+    def open_edit_dialog(todo: Todo) -> None:
+        fill_form(todo)
+        dialog_title.set_text("Todo bearbeiten")
+        dialog.open()
 
     with ui.dialog() as dialog, ui.card().classes("w-full max-w-2xl p-6"):
-        ui.label("Neue Todo erfassen").classes("text-2xl font-bold")
+        dialog_title = ui.label("Neue Todo erfassen").classes("text-2xl font-bold")
 
         with ui.grid(columns=2).classes("w-full gap-4"):
-            ui.input("ID", value="wird automatisch erstellt").props("outlined readonly").classes("w-full")
             title_input = ui.input("Title").props("outlined").classes("w-full")
             description_input = ui.textarea("Description").props("outlined").classes("w-full col-span-2")
             priority_select = ui.select(PRIORITY_OPTIONS, label="Priority", value="low").props("outlined").classes(
@@ -165,7 +237,8 @@ def render_create_todo_dialog(todo_list_id: int, on_created) -> None:
             ui.button("Abbrechen", on_click=dialog.close).props("flat")
             ui.button("Speichern", icon="save", on_click=save_todo).classes("bg-yellow-400 text-black")
 
-    ui.button("Neue Todo erfassen", icon="add", on_click=dialog.open).classes("bg-yellow-400 text-black")
+    ui.button("Neue Todo erfassen", icon="add", on_click=open_create_dialog).classes("bg-yellow-400 text-black")
+    return open_edit_dialog
 
 
 def render_todo_board(todo_list_id: int) -> None:
@@ -178,6 +251,8 @@ def render_todo_board(todo_list_id: int) -> None:
             update_todo_status(todo.id, status)
         board.refresh()
 
+    open_edit_dialog = None
+
     @ui.refreshable
     def board() -> None:
         todos = load_todos(todo_list_id)
@@ -189,7 +264,11 @@ def render_todo_board(todo_list_id: int) -> None:
                     if not column_todos:
                         ui.label("Keine Todos").classes("text-gray-500 text-sm")
                     for todo in column_todos:
-                        dnd.card(todo)
+                        with dnd.card(todo):
+                            ui.button(
+                                icon="edit",
+                                on_click=lambda todo=todo: open_edit_dialog(todo),
+                            ).props("flat round dense").tooltip("Todo bearbeiten")
 
-    render_create_todo_dialog(todo_list_id, refresh_board)
+    open_edit_dialog = render_todo_dialog(todo_list_id, refresh_board)
     board()
