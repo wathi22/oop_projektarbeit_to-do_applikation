@@ -1,6 +1,8 @@
-from typing import Optional
 from abc import ABC, abstractmethod
+from typing import Optional
+
 from sqlmodel import Session, SQLModel, select
+
 
 class BaseHandler(ABC):
     model: type[SQLModel]
@@ -13,22 +15,22 @@ class BaseHandler(ABC):
         self.session.commit()
         self.session.refresh(obj)
         return obj
-    
+
     def delete(self, obj_id: int) -> bool:
         obj = self.session.get(self.model, obj_id)
-        if not obj:
+        if obj is None:
             return False
-        
+
         self.session.delete(obj)
-        self.session.commit() 
+        self.session.commit()
         return True
 
     def get_by_id(self, obj_id: int) -> Optional[SQLModel]:
         return self.session.get(self.model, obj_id)
-    
+
     def get_all(self) -> list[SQLModel]:
         return self.session.exec(select(self.model)).all()
-    
+
     @abstractmethod
-    def update(self, obj_id: int, **fields) -> Optional[SQLModel]:
+    def update(self, obj_id: int, **fields: object) -> Optional[SQLModel]:
         pass
