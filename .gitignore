@@ -31,3 +31,10 @@ __pycache__/
 .idea/
 *.db
 *.sqlite3
+
+# pytest coverage
+.coverage
+htmlcov/
+
+# NiceGUI storage
+.nicegui/

@@ -41,6 +41,8 @@ class TodoHandler(BaseHandler):
             except ValueError:
                 raise ValueError(f"Ungültiger Status: {status}")
         if progress is not None:
+            if not 0 <= progress <= 100:
+                raise ValueError("Fortschritt muss zwischen 0 und 100 liegen")
             todo.progress = progress
         if start_date is not None:
             todo.start_date = start_date
@@ -60,10 +62,13 @@ class TodoHandler(BaseHandler):
         status_filter: Optional[str] = None,
         priority_filter: Optional[str] = None,
     ) -> list[Todo]:
+        # Erstellen einer Abfrage, um alle To-Dos mit der angegebenen todo_list_id zu erhalten
         statement = select(Todo).where(Todo.todo_list_id == todo_list_id)
         if status_filter is not None:
+            # Hinzufügen eines Filters für den Status, wenn ein status_filter angegeben ist
             statement = statement.where(Todo.status == Status(status_filter))
         if priority_filter is not None:
+            # Hinzufügen eines Filters für die Priorität, wenn ein priority_filter angegeben ist
             statement = statement.where(Todo.priority == Priority(priority_filter))
         return self.session.exec(statement).all()
 

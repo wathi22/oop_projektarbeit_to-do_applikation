@@ -29,7 +29,8 @@ def engine():
         cursor.close()
 
     SQLModel.metadata.create_all(engine)
-    return engine
+    yield engine
+    engine.dispose()
 
 @pytest.fixture
 def session(engine):

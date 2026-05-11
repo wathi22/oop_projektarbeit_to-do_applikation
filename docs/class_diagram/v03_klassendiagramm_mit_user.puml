@@ -1,0 +1,154 @@
+@startuml Klassendiagramm_v03_aktuell
+
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam classBackgroundColor #F7F7F7
+skinparam classBorderColor #888888
+skinparam arrowColor #555555
+skinparam packageBackgroundColor #EFEFEF
+skinparam packageBorderColor #AAAAAA
+
+package "Präsentationsschicht (Browser / NiceGUI Engine)" #E8F4FD {
+  note "Thin Client — Vue.js + Quasar via NiceGUI\nAnsichten: Board · Liste · Zeitplan · Kalender · Dashboard\nKeine eigenen Python-Klassen, nur ui.py (Funktionen)" as N1
+}
+
+package "Anwendungslogik / Domänenmodelle (SQLModel)" #EAF7EA {
+
+  enum Status {
+    BACKLOG
+    TODO
+    IN_PROGRESS
+    DONE
+  }
+
+  enum Priority {
+    LOW
+    MEDIUM
+    HIGH
+    CRITICAL
+  }
+
+  class User <<SQLModel, table>> {
+    - id : Optional[int]
+    - firstname : str
+    - lastname : str
+    - email : str
+    - password_hash : str
+    - todo_lists : List[TodoList]
+    --
+    + {static} hash_password(plain_password : str) : str
+    + check_password(plain_password : str) : bool
+    + full_name() : str
+    + __str__() : str
+    + __repr__() : str
+    + __eq__(other : object) : bool
+  }
+
+  class TodoList <<SQLModel, table>> {
+    - id : Optional[int]
+    - name : str
+    - owner_id : Optional[int]
+    - owner : Optional[User]
+    - todos : List[Todo]
+    --
+    + add_todo(todo : Todo) : void
+    + remove_todo(todo_id : int) : void
+    + get_all_todos() : list[Todo]
+    + filter_todos(status, priority) : list[Todo]
+    + __str__() : str
+    + __repr__() : str
+    + __eq__(other : object) : bool
+  }
+
+  class Todo <<SQLModel, table>> {
+    - id : Optional[int]
+    - title : str
+    - description : str
+    - priority : Priority
+    - status : Status
+    - progress : int
+    - start_date : Optional[date]
+    - due_date : Optional[date]
+    - labels : str
+    - created_at : datetime
+    - todo_list_id : Optional[int]
+    - todo_list : Optional[TodoList]
+    --
+    + toggle_status() : void
+    + is_overdue() : bool
+    + update_progress(value : int) : void
+    + __str__() : str
+    + __repr__() : str
+    + __eq__(other : object) : bool
+  }
+
+  note right of Todo
+    progress: 0–100 (%)
+    labels:   kommagetrennte Zeichenkette
+  end note
+
+  User "1" *-- "0..*" TodoList : besitzt
+  TodoList "1" *-- "0..*" Todo : enthält
+  Todo ..> Status : nutzt
+  Todo ..> Priority : nutzt
+
+}
+
+package "Persistenzschicht (SQLite via SQLModel + SQLAlchemy)" #FEF9E7 {
+
+  abstract class BaseHandler <<ABC>> {
+    + {static} model : type[SQLModel]
+    - session : Session
+    --
+    + __init__(session : Session)
+    + save(obj : SQLModel) : SQLModel
+    + delete(obj_id : int) : bool
+    + get_by_id(obj_id : int) : Optional[SQLModel]
+    + get_all() : list[SQLModel]
+    + {abstract} update(obj_id : int, **fields) : Optional[SQLModel]
+  }
+
+  class UserHandler {
+    + {static} model = User
+    --
+    + update(user_id, firstname?, lastname?, email?) : Optional[User]
+    + get_by_email(email : str) : Optional[User]
+  }
+
+  class TodoListHandler {
+    + {static} model = TodoList
+    --
+    + update(todo_list_id, name?, owner_id?) : Optional[TodoList]
+    + get_lists_for_user(user_id : int) : list[TodoList]
+    + create_list(user_id : int, name : str) : TodoList
+  }
+
+  class TodoHandler {
+    + {static} model = Todo
+    --
+    + update(todo_id, title?, description?, priority?, status?,\n  progress?, start_date?, due_date?, labels?) : Optional[Todo]
+    + get_todos_for_list(todo_list_id, status_filter?, priority_filter?) : list[Todo]
+    + toggle_status(todo_id : int) : Optional[Todo]
+    + update_progress(todo_id : int, progress : int) : Optional[Todo]
+  }
+
+  BaseHandler <|-- UserHandler
+  BaseHandler <|-- TodoListHandler
+  BaseHandler <|-- TodoHandler
+
+}
+
+UserHandler ..> User : verwaltet
+TodoListHandler ..> TodoList : verwaltet
+TodoHandler ..> Todo : verwaltet
+
+note bottom of BaseHandler
+  Abstract Base Class mit
+  @abstractmethod update().
+  Konkrete Handler erben die
+  CRUD-Methoden save / delete /
+  get_by_id / get_all und müssen
+  update() implementieren.
+end note
+
+@enduml

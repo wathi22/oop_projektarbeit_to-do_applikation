@@ -1,5 +1,5 @@
 from datetime import date
-
+import pytest
 from app.services.TodoHandler import TodoHandler
 from app.models.todo import (
     Todo,
@@ -347,3 +347,37 @@ def test_update_progress_keeps_old_value_for_invalid_progress(session, sample_to
     # Assert
     assert updated_todo is not None
     assert updated_todo.progress == old_progress
+
+
+# Edge Case: Ungültiger Fortschritt soll ValueError auslösen
+@pytest.mark.parametrize("invalid_progress", [-10, 150])
+def test_update_raises_value_error_for_invalid_progress(session, sample_todo, invalid_progress):
+    # Arrange
+    todo_handler = TodoHandler(session)
+
+    # Act & Assert
+    with pytest.raises(ValueError):
+        todo_handler.update(
+            sample_todo.id,
+            progress=invalid_progress,
+        )
+
+# Happy Path: update() akzeptiert gültigen Fortschritt
+@pytest.mark.parametrize("valid_progress", [0, 50, 100])
+def test_update_accepts_valid_progress(
+    session,
+    sample_todo,
+    valid_progress,
+):
+    # Arrange
+    todo_handler = TodoHandler(session)
+
+    # Act
+    updated_todo = todo_handler.update(
+        sample_todo.id,
+        progress=valid_progress,
+    )
+
+    # Assert
+    assert updated_todo is not None
+    assert updated_todo.progress == valid_progress

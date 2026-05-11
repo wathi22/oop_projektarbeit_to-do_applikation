@@ -54,3 +54,4 @@ wsproto==1.3.2
 yarl==1.23.0
 sqlmodel==0.0.38
 bcrypt
+pytest-cov
