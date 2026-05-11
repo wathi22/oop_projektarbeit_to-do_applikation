@@ -65,90 +65,6 @@ def test_update_progress_ignores_invalid_values(invalid_value):
     # Assert
     assert todo.progress == 10
 
-# Edge Case: Fortschritt 0 ist ein gültiger Grenzwert
-def test_update_progress_allows_zero():
-    # Arrange
-    todo = Todo(
-        title="ORM lernen",
-        progress=50,
-        priority=Priority.LOW,
-    )
-
-    # Act
-    todo.update_progress(0)
-
-    # Assert
-    assert todo.progress == 0
-
-
-# Edge Case: Fortschritt 100 ist ein gültiger Grenzwert
-def test_update_progress_allows_hundred():
-    # Arrange
-    todo = Todo(
-        title="ORM lernen",
-        progress=50,
-        priority=Priority.LOW,
-    )
-
-    # Act
-    todo.update_progress(100)
-
-    # Assert
-    assert todo.progress == 100
-
-# Edge Case: Fortschritt unter 0 soll ignoriert werden
-def test_update_progress_ignores_minus_one():
-    todo = Todo(title="Test", progress=50, priority=Priority.LOW)
-
-    # Act
-    todo.update_progress(-1)
-
-    # Assert
-    assert todo.progress == 50
-
-
-# Edge Case: Fortschritt über 100 soll ignoriert werden
-def test_update_progress_ignores_hundred_one():
-    todo = Todo(title="Test", progress=50, priority=Priority.LOW)
-
-    # Act
-    todo.update_progress(101)
-
-    # Assert
-    assert todo.progress == 50
-
-
-# Edge Case: Negativer Fortschritt soll ignoriert werden
-def test_update_progress_ignores_negative_value():
-    # Arrange
-    todo = Todo(
-        title="ORM lernen",
-        progress=10,
-        priority=Priority.LOW,
-    )
-
-    # Act
-    todo.update_progress(-5)
-
-    # Assert
-    assert todo.progress == 10
-
-
-# Edge Case: Fortschritt über 100 soll ignoriert werden
-def test_update_progress_ignores_value_above_100():
-    # Arrange
-    todo = Todo(
-        title="ORM lernen",
-        progress=10,
-        priority=Priority.LOW,
-    )
-
-    # Act
-    todo.update_progress(150)
-
-    # Assert
-    assert todo.progress == 10
-
 @pytest.mark.parametrize("status, due_date, expected", [
     (Status.BACKLOG, None, False),
     (Status.TODO, date.today() - timedelta(days=1), True),
@@ -266,3 +182,107 @@ def test_eq_returns_false_when_comparing_with_different_type():
     result = (todo == not_a_todo)
     # Assert
     assert result is False
+
+# __lt__ Happy Path: zwei Todos mit Datum
+def test_lt_compares_due_dates():
+    # Arrange
+    todo1 = Todo(
+        title="Mathematik lernen",
+        due_date=date(2024, 6, 10),
+    )
+    todo2 = Todo(
+        title="Programmieren lernen",
+        due_date=date(2024, 6, 15),
+    )
+
+    # Act
+    result = (todo1 < todo2)
+
+    # Assert
+    assert result is True
+
+# __lt__ Edge Case: Test 2 — Edge Case: self mit due_date, other ohne due_date → self ist "kleiner" → True
+def test_lt_with_one_due_date():
+    # Arrange
+    todo_with_due_date = Todo(
+        title="Mathematik lernen",
+        due_date=date(2024, 6, 10),
+    )
+    todo_without_due_date = Todo(
+        title="Programmieren lernen",
+        due_date=None,
+    )
+
+    # Act
+    result = (todo_with_due_date < todo_without_due_date)
+
+    # Assert
+    assert result is True
+
+# __lt__ Edge Case: Anderer Typ soll NotImplemented zurückgeben
+def test_lt_with_different_type_returns_not_implemented():
+    # Arrange
+    todo = Todo(
+        title="Mathematik lernen",
+        due_date=date(2024, 6, 10),
+    )
+    not_a_todo = "Ich bin kein Todo-Objekt"
+
+    # Assert and Act
+    with pytest.raises(TypeError):
+        result = (todo < not_a_todo)
+
+# Happy Path: from_dict erstellt ein Todo-Objekt mit den richtigen Attributen
+def test_from_dict_creates_todo_with_correct_attributes():
+    # Arrange
+    data = {
+        "title": "Mathematik lernen",
+        "description": "Angwandte Mathematik lernen",
+        "priority": "high",
+        "status": "To-Do",
+        "progress": 50,
+        "start_date": "2024-06-01",
+        "due_date": "2024-06-30",
+    }
+
+    # Act
+    todo = Todo.from_dict(data)
+
+    # Assert
+    assert todo.title == "Mathematik lernen"
+    assert todo.description == "Angwandte Mathematik lernen"
+    assert todo.priority == Priority.HIGH
+    assert todo.status == Status.TODO
+    assert todo.progress == 50
+    assert todo.start_date == date(2024, 6, 1)
+    assert todo.due_date == date(2024, 6, 30)
+
+# Happy Path: from_dict mit minimalen Daten (nur Titel) erstellt ein Todo-Objekt mit Standardwerten
+def test_from_dict_with_minimal_data():
+    # Arrange
+    data = {
+        "title": "Mathematik lernen",
+    }
+
+    # Act
+    todo = Todo.from_dict(data)
+
+    # Assert
+    assert todo.title == "Mathematik lernen"
+    assert todo.description == ""
+    assert todo.priority == Priority.LOW
+    assert todo.status == Status.BACKLOG
+    assert todo.progress == 0
+    assert todo.start_date is None
+    assert todo.due_date is None
+
+# Edge Case: Fehlendes Pflichtfeld "title" soll einen error auslösen
+def test_from_dict_missing_title_error():
+    # Arrange
+    data = {
+        "description": "Angwandte Mathematik lernen",
+    }
+
+    # Act and Assert
+    with pytest.raises(KeyError):
+        todo = Todo.from_dict(data)

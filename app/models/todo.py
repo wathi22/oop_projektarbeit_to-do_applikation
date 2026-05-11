@@ -79,3 +79,52 @@ class Todo(SQLModel, table=True):
         if not isinstance(other, Todo):
             return NotImplemented
         return self.id == other.id
+    
+    def __lt__(self, other: "Todo") -> bool:
+        # 1. Type-Check: ist 'other' überhaupt ein Todo?
+        if not isinstance(other, Todo):
+            return NotImplemented
+        # 2. Falls beide kein due_date haben → sind "gleich" → False
+        if self.due_date is None and other.due_date is None:
+            return False
+        # 3. Falls self kein due_date hat, other aber schon → self ist "größer" → False
+        if self.due_date is None and other.due_date is not None:
+            return False
+        # 4. Falls self ein due_date hat, other nicht → self ist "kleiner" → True
+        if self.due_date is not None and other.due_date is None:
+            return True
+        # 5. Beide haben due_dates → vergleiche die Daten
+        return self.due_date < other.due_date
+    
+    @classmethod
+    def from_dict(cls, data: dict) -> "Todo":
+        priority_value = data.get("priority", Priority.LOW)
+        if isinstance(priority_value, str):
+            priority_value = Priority(priority_value)
+
+        status_value = data.get("status", Status.BACKLOG)
+        if isinstance(status_value, str):
+            status_value = Status(status_value)
+
+        start_date_value = data.get("start_date")
+        if isinstance(start_date_value, str):
+            start_date_value = date.fromisoformat(start_date_value)
+
+        due_date_value = data.get("due_date")
+        if isinstance(due_date_value, str):
+            due_date_value = date.fromisoformat(due_date_value)
+
+        return cls(
+            # Pflichtfeld "Title" muss immer vorhanden sein, sonst werfen wir eine Exception
+            title=data["title"],
+            # Optionale Felder mit .get() und Default-Werten
+            description=data.get("description", ""),
+            # Priority-Enum aus String erstellen, Default ist LOW
+            priority=priority_value,
+            # Status-Enum aus String erstellen, Default ist BACKLOG
+            status=status_value,
+            progress=data.get("progress", 0),
+            start_date=start_date_value,
+            due_date=due_date_value,
+            labels=data.get("labels", ""),
+        )
