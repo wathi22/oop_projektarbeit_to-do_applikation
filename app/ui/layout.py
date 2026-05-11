@@ -8,6 +8,7 @@ from app.services.TodoListHandler import TodoListHandler
 NAVIGATION_ITEMS = [
     {"label": "Todos", "icon": "checklist", "path": "/todos"},
     {"label": "Listen", "icon": "view_list", "path": "/lists"},
+    {"label": "Kalender", "icon": "calendar_month", "path": "/calendar"},
     {"label": "Einstellungen", "icon": "settings", "path": "/settings"},
 ]
 
