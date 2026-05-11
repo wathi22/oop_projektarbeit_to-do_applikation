@@ -30,7 +30,7 @@ def settings_page():
         ui.navigate.reload()
 
     def delete_all_todos() -> None:
-        todos = load_todos(todo_list_id)
+        todos = load_todos(todo_list_id, apply_label_filter=False)
 
         with Session(engine) as session:
             for todo in todos:
@@ -45,7 +45,7 @@ def settings_page():
 
     @ui.refreshable
     def stats() -> None:
-        todo_count = len(load_todos(todo_list_id))
+        todo_count = len(load_todos(todo_list_id, apply_label_filter=False))
         ui.label(f"Aktuell gespeicherte Todos: {todo_count}").classes("text-gray-600")
 
     with ui.dialog() as confirm_dialog, ui.card().classes("w-96"):

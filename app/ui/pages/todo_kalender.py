@@ -5,7 +5,7 @@ from nicegui import ui
 
 from app.models.todo import Status, Todo
 from app.ui.layout import create_app_layout, get_or_create_default_todo_list, require_login
-from app.ui.pages.todo_board import create_todo, load_todos, parse_due_date, update_todo_status
+from app.ui.pages.todo_board import load_todos, render_create_todo_dialog, update_todo_status
 
 
 def _month_days(month: date) -> list[date | None]:
@@ -32,23 +32,6 @@ def _status_color(status: Status) -> str:
 
 def render_calendar_view(todo_list_id: int) -> None:
     current_month = date.today().replace(day=1)
-    title_input = None
-    due_date_input = None
-
-    def add_todo() -> None:
-        title = (title_input.value or "").strip()
-        due_date = parse_due_date(due_date_input.value)
-
-        if not title:
-            ui.notify("Bitte gib einen Todo-Titel ein.", color="warning")
-            return
-
-        create_todo(todo_list_id, title, due_date)
-        title_input.value = ""
-        due_date_input.value = None
-        ui.notify("Todo erstellt.", color="positive")
-        todo_groups.refresh()
-
 
     def change_month(month_delta: int) -> None:
         nonlocal current_month
@@ -102,6 +85,8 @@ def render_calendar_view(todo_list_id: int) -> None:
                                 title_classes += " line-through text-gray-400"
                             ui.label(todo.title).classes(title_classes)
                             ui.badge(todo.status.value).props(f"color={_status_color(todo.status)}")
+                            if todo.priority:
+                                ui.badge(todo.priority.value).props("color=grey")
                             if todo.status != Status.DONE:
                                 ui.button(icon="check", on_click=lambda todo=todo: mark_done(todo)).props(
                                     "flat round dense"
@@ -114,14 +99,11 @@ def render_calendar_view(todo_list_id: int) -> None:
                     with ui.item():
                         with ui.item_section():
                             ui.item_label(todo.title)
-                            ui.item_label(todo.status.value).props("caption")
+                            ui.item_label(f"ID {todo.id} | {todo.status.value} | Fortschritt {todo.progress}%").props(
+                                "caption"
+                            )
 
-    with ui.row().classes("w-full max-w-5xl items-end gap-3"):
-        title_input = ui.input("Neues Todo", placeholder="z.B. Abgabe vorbereiten").props("outlined").classes("grow")
-        due_date_input = ui.input("Erledigungsdatum", value=date.today().isoformat()).props("type=date outlined")
-        title_input.on("keydown.enter", lambda event: add_todo())
-        ui.button("Hinzufügen", icon="add", on_click=add_todo).classes("bg-yellow-400 text-black")
-
+    render_create_todo_dialog(todo_list_id, calendar.refresh)
     calendar()
 
 

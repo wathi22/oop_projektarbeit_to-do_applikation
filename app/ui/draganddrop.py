@@ -48,6 +48,21 @@ class card(ui.card):
         self.item = item
         with self.props('draggable').classes('w-full cursor-pointer bg-grey-1'):
             ui.label(item.title)
+            details: list[str] = []
+            item_id = getattr(item, 'id', None)
+            priority = getattr(item, 'priority', None)
+            progress = getattr(item, 'progress', None)
+            labels = getattr(item, 'labels', None)
+            if item_id is not None:
+                details.append(f'ID {item_id}')
+            if priority:
+                details.append(getattr(priority, 'value', priority))
+            if progress:
+                details.append(f'{progress}%')
+            if labels:
+                details.append(labels)
+            if details:
+                ui.label(' | '.join(details)).classes('text-xs text-gray-500')
             due_date = getattr(item, 'due_date', None)
             if due_date:
                 ui.label(f'Bis {due_date.strftime("%d.%m.%Y")}').classes('text-xs text-gray-500')

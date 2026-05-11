@@ -13,6 +13,13 @@ NAVIGATION_ITEMS = [
 ]
 
 
+LABEL_FILTERS = {
+    "all": "Alle",
+    "arbeit": "Arbeit",
+    "private": "Private",
+}
+
+
 THEMES = {
     "dark": {
         "name": "Dunkel",
@@ -51,6 +58,18 @@ def get_theme() -> dict[str, str]:
 def set_theme(theme_key: str) -> None:
     if theme_key in THEMES:
         app.storage.user["theme"] = theme_key
+
+
+def get_label_filter() -> str:
+    label_filter = app.storage.user.get("label_filter", "all")
+    if label_filter not in LABEL_FILTERS:
+        return "all"
+    return label_filter
+
+
+def set_label_filter(label_filter: str) -> None:
+    if label_filter in LABEL_FILTERS:
+        app.storage.user["label_filter"] = label_filter
 
 
 def get_current_user_id() -> int | None:
@@ -110,6 +129,19 @@ def create_app_layout(title: str, active_path: str) -> None:
 
             ui.space()
             ui.separator().classes(theme["drawer_separator"])
+            ui.label("Labels").classes(f"text-sm font-bold {theme['inactive_button']}")
+            ui.select(
+                LABEL_FILTERS,
+                value=get_label_filter(),
+                on_change=lambda event: change_label_filter(event.value),
+            ).props("outlined dense border-2").classes("bg-blue-300 border-blue-500 text-black text-1xl font-bold mb-10 w-full")
+
+            ui.separator().classes(theme["drawer_separator"])
             ui.button("Abmelden", icon="logout", on_click=logout).props("flat align=left").classes(
                 f"w-full justify-start {theme['inactive_button']}"
             )
+
+
+def change_label_filter(label_filter: str) -> None:
+    set_label_filter(label_filter)
+    ui.navigate.reload()
