@@ -15,7 +15,7 @@ Dieses Projekt wird im Rahmen des Moduls **Objektorientierte Programmierung (OOP
 Die neue Anwendung basiert auf einer **3-Schichten-Architektur**:
 
 * Präsentationsschicht Frontend GUI (Browser mit NiceGUI)
-* Anwendungslogik Backend (Python, objektorientiert, ORM)
+* Anwendungslogik Backend (Python, objektorientiert)
 * Persistenzschicht (SQLite mit ORM)
 
 ---
@@ -37,7 +37,7 @@ Die neue Anwendung basiert auf einer **3-Schichten-Architektur**:
 ### 3. Persistenzschicht (Datenbank)
 
 * Verwendung von **SQLite**
-* Zugriff über **SQLAlchemy (ORM)**
+* Zugriff über **SQLModel (ORM)**
 * Keine direkten SQL-Statements
 
 ---
@@ -46,7 +46,7 @@ Die neue Anwendung basiert auf einer **3-Schichten-Architektur**:
 
 * Python
 * NiceGUI
-* SQLAlchemy
+* SQLModel
 * SQLite
 * pytest
 * GitHub
@@ -196,19 +196,24 @@ Die Umgebung ist korrekt eingerichtet, wenn:
 
 ```text
 app/
-  main.py
-  ui/
-  services/
-  models/
-  database/
-
-docs/
+│
+├── main.py
+├── database/
+├── models/
+├── services/
+├── ui/
+│
 tests/
+│
+├── conftest.py
+├── test_models/
+├── test_services/
+│
+docs/
 
 README.md
 requirements.txt
 .gitignore
-```
 
 ---
 
