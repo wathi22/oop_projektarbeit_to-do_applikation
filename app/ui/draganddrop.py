@@ -48,6 +48,9 @@ class card(ui.card):
         self.item = item
         with self.props('draggable').classes('w-full cursor-pointer bg-grey-1'):
             ui.label(item.title)
+            due_date = getattr(item, 'due_date', None)
+            if due_date:
+                ui.label(f'Bis {due_date.strftime("%d.%m.%Y")}').classes('text-xs text-gray-500')
         self.on('dragstart', self.handle_dragstart)
         self.on('dragover.prevent', self.handle_dragover)
 

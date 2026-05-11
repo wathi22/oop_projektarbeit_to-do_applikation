@@ -1,37 +1,11 @@
 from calendar import monthrange
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 from nicegui import ui
-from sqlmodel import Session
 
-from app.database.database import engine
 from app.models.todo import Status, Todo
-from app.services.TodoHandler import TodoHandler
 from app.ui.layout import create_app_layout, get_or_create_default_todo_list, require_login
-from app.ui.pages.todo_board import load_todos, update_todo_status
-
-
-def _create_todo_with_due_date(todo_list_id: int, title: str, due_date: date) -> None:
-    with Session(engine) as session:
-        TodoHandler(session).save(
-            Todo(
-                title=title,
-                status=Status.BACKLOG,
-                progress=0,
-                due_date=due_date,
-                todo_list_id=todo_list_id,
-            )
-        )
-
-
-def _parse_date(value: str | None) -> date | None:
-    if not value:
-        return None
-
-    try:
-        return datetime.strptime(value, "%Y-%m-%d").date()
-    except ValueError:
-        return None
+from app.ui.pages.todo_board import create_todo, load_todos, parse_due_date, update_todo_status
 
 
 def _month_days(month: date) -> list[date | None]:
@@ -63,20 +37,18 @@ def render_calendar_view(todo_list_id: int) -> None:
 
     def add_todo() -> None:
         title = (title_input.value or "").strip()
-        due_date = _parse_date(due_date_input.value)
+        due_date = parse_due_date(due_date_input.value)
 
         if not title:
             ui.notify("Bitte gib einen Todo-Titel ein.", color="warning")
             return
 
-        if due_date is None:
-            ui.notify("Bitte wähle ein gültiges Erledigungsdatum.", color="warning")
-            return
-
-        _create_todo_with_due_date(todo_list_id, title, due_date)
+        create_todo(todo_list_id, title, due_date)
         title_input.value = ""
-        due_date_input.value = date.today().isoformat()
-        calendar.refresh()
+        due_date_input.value = None
+        ui.notify("Todo erstellt.", color="positive")
+        todo_groups.refresh()
+
 
     def change_month(month_delta: int) -> None:
         nonlocal current_month

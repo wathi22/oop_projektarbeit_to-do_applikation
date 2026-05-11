@@ -1,21 +1,25 @@
+from datetime import date
 from nicegui import ui
 
 from app.models.todo import Status, Todo
 from app.ui.layout import create_app_layout, get_or_create_default_todo_list, require_login
-from app.ui.pages.todo_board import COLUMNS, create_todo, load_todos, update_todo_status
+from app.ui.pages.todo_board import COLUMNS, create_todo, load_todos, parse_due_date, update_todo_status
 
 
 def render_todo_list_view(todo_list_id: int) -> None:
     title_input = None
+    due_date_input = None
 
     def add_todo() -> None:
         title = (title_input.value or "").strip()
+        due_date = parse_due_date(due_date_input.value)
         if not title:
             ui.notify("Bitte gib einen Todo-Titel ein.", color="warning")
             return
 
-        create_todo(todo_list_id, title)
+        create_todo(todo_list_id, title, due_date)
         title_input.value = ""
+        due_date_input.value = None
         ui.notify("Todo erstellt.", color="positive")
         todo_groups.refresh()
 
@@ -51,7 +55,10 @@ def render_todo_list_view(todo_list_id: int) -> None:
                                     if todo.status == Status.DONE:
                                         title_classes += " line-through text-gray-400"
                                     ui.item_label(todo.title).classes(title_classes)
-                                    ui.item_label(todo.status.value).props("caption").classes("text-gray-500")
+                                    caption = todo.status.value
+                                    if todo.due_date:
+                                        caption += f" | Erledigen bis {todo.due_date.strftime('%d.%m.%Y')}"
+                                    ui.item_label(caption).props("caption").classes("text-gray-500")
 
                                 ui.badge(todo.status.value).props(
                                     "color=positive" if todo.status == Status.DONE else "color=grey"
@@ -73,6 +80,7 @@ def render_todo_list_view(todo_list_id: int) -> None:
         title_input = ui.input("Neues Todo", placeholder="z.B. Dokumentation fertigstellen").props(
             "outlined"
         ).classes("grow")
+        due_date_input = ui.input("Erledigungsdatum", value=date.today().isoformat()).props("type=date outlined")
         title_input.on("keydown.enter", lambda event: add_todo())
         ui.button("Hinzufügen", icon="add", on_click=add_todo).classes("bg-yellow-400 text-black")
 

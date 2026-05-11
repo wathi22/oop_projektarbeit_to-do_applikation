@@ -1,3 +1,5 @@
+from datetime import date, datetime
+
 from nicegui import ui
 from sqlmodel import Session
 
@@ -14,13 +16,24 @@ COLUMNS = [
 ]
 
 
-def create_todo(todo_list_id: int, title: str) -> None:
+def parse_due_date(value: str | None) -> date | None:
+    if not value:
+        return None
+
+    try:
+        return datetime.strptime(value, "%Y-%m-%d").date()
+    except ValueError:
+        return None
+
+
+def create_todo(todo_list_id: int, title: str, due_date: date | None = None) -> None:
     with Session(engine) as session:
         TodoHandler(session).save(
             Todo(
                 title=title,
                 status=Status.BACKLOG,
                 progress=0,
+                due_date=due_date,
                 todo_list_id=todo_list_id,
             )
         )
@@ -39,15 +52,18 @@ def update_todo_status(todo_id: int, status: Status) -> None:
 
 def render_todo_board(todo_list_id: int) -> None:
     title_input = None
+    due_date_input = None
 
     def add_todo() -> None:
         title = (title_input.value or "").strip()
+        due_date = parse_due_date(due_date_input.value)
         if not title:
             ui.notify("Bitte gib einen Todo-Titel ein.", color="warning")
             return
 
-        create_todo(todo_list_id, title)
+        create_todo(todo_list_id, title, due_date)
         title_input.value = ""
+        due_date_input.value = None
         ui.notify("Todo erstellt.", color="positive")
         board.refresh()
 
@@ -74,6 +90,7 @@ def render_todo_board(todo_list_id: int) -> None:
         title_input = ui.input("Neues Todo", placeholder="z.B. Dokumentation fertigstellen").props(
             "outlined"
         ).classes("grow")
+        due_date_input = ui.input("Erledigungsdatum", value=date.today().isoformat()).props("type=date outlined")
         title_input.on("keydown.enter", lambda event: add_todo())
         ui.button("Hinzufügen", icon="add", on_click=add_todo).classes("bg-yellow-400 text-black")
 
