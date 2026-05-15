@@ -61,6 +61,10 @@ def render_todo_list_view(todo_list_id: int) -> None:
                                         caption += f" | Erledigen bis {todo.due_date.strftime('%d.%m.%Y')}"
                                     if todo.labels:
                                         caption += f" | {todo.labels}"
+                                    if todo.link:
+                                        caption += " | Link"
+                                    if todo.attachment_name:
+                                        caption += f" | Dokument {todo.attachment_name}"
                                     ui.item_label(caption).props("caption").classes("text-gray-500")
 
                                 ui.badge(todo.status.value).props(
@@ -70,6 +74,11 @@ def render_todo_list_view(todo_list_id: int) -> None:
                                     icon="edit",
                                     on_click=lambda todo=todo: open_edit_dialog(todo),
                                 ).props("flat round dense").tooltip("Todo bearbeiten")
+                                if todo.attachment_path:
+                                    ui.button(
+                                        icon="open_in_new",
+                                        on_click=lambda path=todo.attachment_path: ui.navigate.to(path, new_tab=True),
+                                    ).props("flat round dense").tooltip("Dokument öffnen")
                                 ui.button(
                                     icon="undo",
                                     on_click=lambda todo=todo: change_status(todo, Status.BACKLOG),

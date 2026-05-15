@@ -16,6 +16,9 @@ class TodoHandler(BaseHandler):
         todo_id: int,
         title: Optional[str] = None,
         description: Optional[str] = None,
+        link: Optional[str] = None,
+        attachment_path: Optional[str] = None,
+        attachment_name: Optional[str] = None,
         priority: Optional[str] = None,
         status: Optional[str] = None,
         progress: Optional[int] = None,
@@ -30,6 +33,12 @@ class TodoHandler(BaseHandler):
             todo.title = title
         if description is not None:
             todo.description = description
+        if link is not None:
+            todo.link = link
+        if attachment_path is not None:
+            todo.attachment_path = attachment_path
+        if attachment_name is not None:
+            todo.attachment_name = attachment_name
         if priority is not None:
             try:
                 todo.priority = Priority(priority)

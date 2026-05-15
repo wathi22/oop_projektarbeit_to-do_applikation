@@ -154,6 +154,25 @@ def test_update_changes_todo_fields(session, sample_todo):
     assert updated_todo.labels == "updated,important"
 
 
+def test_update_changes_todo_link_and_attachment(session, sample_todo):
+    # Arrange
+    todo_handler = TodoHandler(session)
+
+    # Act
+    updated_todo = todo_handler.update(
+        sample_todo.id,
+        link="https://example.com/spec",
+        attachment_path="/todo-uploads/spec.pdf",
+        attachment_name="spec.pdf",
+    )
+
+    # Assert
+    assert updated_todo is not None
+    assert updated_todo.link == "https://example.com/spec"
+    assert updated_todo.attachment_path == "/todo-uploads/spec.pdf"
+    assert updated_todo.attachment_name == "spec.pdf"
+
+
 # Happy Path: Start- und Due-Date werden erfolgreich aktualisiert
 def test_update_changes_todo_dates(session, sample_todo):
     # Arrange

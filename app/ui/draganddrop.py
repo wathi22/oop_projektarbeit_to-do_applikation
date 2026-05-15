@@ -53,12 +53,18 @@ class card(ui.card):
             priority = getattr(item, 'priority', None)
             progress = getattr(item, 'progress', None)
             labels = getattr(item, 'labels', None)
+            link = getattr(item, 'link', None)
+            attachment_name = getattr(item, 'attachment_name', None)
             if priority:
                 details.append(getattr(priority, 'value', priority))
             if progress:
                 details.append(f'{progress}%')
             if labels:
                 details.append(labels)
+            if link:
+                details.append('Link')
+            if attachment_name:
+                details.append(f'Document: {attachment_name}')
             if details:
                 ui.label(' | '.join(details)).classes('text-xs text-gray-500')
             due_date = getattr(item, 'due_date', None)

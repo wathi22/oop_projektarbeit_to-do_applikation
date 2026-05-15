@@ -26,6 +26,9 @@ class Todo(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     title: str
     description: str = ""
+    link: str = ""
+    attachment_path: str = ""
+    attachment_name: str = ""
     priority: Priority = Priority.LOW
     status: Status = Status.BACKLOG
     progress: int = 0
@@ -67,6 +70,8 @@ class Todo(SQLModel, table=True):
             f"Todo(id={self.id!r}, "
             f"title={self.title!r}, "
             f"description={self.description!r}, "
+            f"link={self.link!r}, "
+            f"attachment_name={self.attachment_name!r}, "
             f"priority={self.priority!r}, "
             f"status={self.status!r}, "
             f"progress={self.progress!r}, "
@@ -119,6 +124,9 @@ class Todo(SQLModel, table=True):
             title=data["title"],
             # Optionale Felder mit .get() und Default-Werten
             description=data.get("description", ""),
+            link=data.get("link", ""),
+            attachment_path=data.get("attachment_path", ""),
+            attachment_name=data.get("attachment_name", ""),
             # Priority-Enum aus String erstellen, Default ist LOW
             priority=priority_value,
             # Status-Enum aus String erstellen, Default ist BACKLOG

@@ -100,10 +100,19 @@ def render_calendar_view(todo_list_id: int) -> None:
                             ui.badge(todo.status.value).props(f"color={_status_color(todo.status)}")
                             if todo.priority:
                                 ui.badge(todo.priority.value).props("color=grey")
+                            if todo.link:
+                                ui.badge("Link").props("color=info")
+                            if todo.attachment_name:
+                                ui.badge("Dokument").props("color=grey")
                             ui.button(
                                 icon="edit",
                                 on_click=lambda todo=todo: open_edit_dialog(todo),
                             ).props("flat round dense").tooltip("Todo bearbeiten")
+                            if todo.attachment_path:
+                                ui.button(
+                                    icon="open_in_new",
+                                    on_click=lambda path=todo.attachment_path: ui.navigate.to(path, new_tab=True),
+                                ).props("flat round dense").tooltip("Dokument öffnen")
                             if todo.status != Status.DONE:
                                 ui.button(icon="check", on_click=lambda todo=todo: mark_done(todo)).props(
                                     "flat round dense"
@@ -120,11 +129,21 @@ def render_calendar_view(todo_list_id: int) -> None:
                     with ui.item():
                         with ui.item_section():
                             ui.item_label(todo.title)
-                            ui.item_label(f"{todo.status.value} | Fortschritt {todo.progress}%").props("caption")
+                            caption = f"{todo.status.value} | Fortschritt {todo.progress}%"
+                            if todo.link:
+                                caption += " | Link"
+                            if todo.attachment_name:
+                                caption += f" | Dokument {todo.attachment_name}"
+                            ui.item_label(caption).props("caption")
                         ui.button(
                             icon="edit",
                             on_click=lambda todo=todo: open_edit_dialog(todo),
                         ).props("flat round dense").tooltip("Todo bearbeiten")
+                        if todo.attachment_path:
+                            ui.button(
+                                icon="open_in_new",
+                                on_click=lambda path=todo.attachment_path: ui.navigate.to(path, new_tab=True),
+                            ).props("flat round dense").tooltip("Dokument öffnen")
                         ui.button(
                             icon="delete",
                             on_click=lambda todo=todo: remove_todo(todo),
