@@ -15,10 +15,18 @@ target: card | None = None
 
 
 class column(ui.column):
-    def __init__(self, name: str, on_drop: Callable[[Item, str], None] | None = None) -> None:
+    def __init__(
+        self,
+        name: str,
+        on_drop: Callable[[Item, str], None] | None = None,
+        count: int | None = None,
+    ) -> None:
         super().__init__()
         with self.classes('bg-blue-2 w-60 p-4 rounded shadow-2'):
-            ui.label(name).classes('text-bold ml-1')
+            with ui.row().classes('w-full items-center justify-between'):
+                ui.label(name).classes('text-bold ml-1')
+                if count is not None:
+                    ui.badge(str(count)).props('color=grey')
         self.name = name
         self.on('dragover.prevent', self.highlight)
         self.on('dragleave', self.unhighlight)

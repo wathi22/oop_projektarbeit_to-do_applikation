@@ -37,6 +37,10 @@ COLUMNS = [
 ]
 
 
+def count_todos_for_statuses(todos: list[Todo], statuses: tuple[Status, ...]) -> int:
+    return len([todo for todo in todos if todo.status in statuses])
+
+
 def parse_due_date(value: str | None) -> date | None:
     if not value:
         return None
@@ -103,6 +107,42 @@ def update_todo_status(todo_id: int, status: Status) -> None:
 def delete_todo(todo_id: int) -> bool:
     with Session(engine) as session:
         return TodoHandler(session).delete(todo_id)
+
+
+def render_delete_todo_confirmation(on_deleted):
+    selected_todo: Todo | None = None
+    todo_title_label = None
+
+    def confirm_delete(todo: Todo) -> None:
+        nonlocal selected_todo
+        selected_todo = todo
+        todo_title_label.set_text(f"Todo: {todo.title}")
+        delete_dialog.open()
+
+    def delete_selected_todo() -> None:
+        nonlocal selected_todo
+        if selected_todo is None or selected_todo.id is None:
+            delete_dialog.close()
+            return
+
+        if delete_todo(selected_todo.id):
+            ui.notify("Todo gelöscht.", color="positive")
+            on_deleted()
+        else:
+            ui.notify("Todo konnte nicht gelöscht werden.", color="warning")
+
+        selected_todo = None
+        delete_dialog.close()
+
+    with ui.dialog() as delete_dialog, ui.card().classes("w-96"):
+        ui.label("Todo wirklich löschen?").classes("text-xl font-bold")
+        todo_title_label = ui.label("").classes("text-gray-600")
+        ui.label("Diese Aktion kann nicht rückgängig gemacht werden.").classes("text-gray-600")
+        with ui.row().classes("w-full justify-end gap-2"):
+            ui.button("Abbrechen", on_click=delete_dialog.close).props("flat")
+            ui.button("Löschen", icon="delete", on_click=delete_selected_todo).props("color=negative")
+
+    return confirm_delete
 
 
 def update_todo_details(
@@ -401,16 +441,6 @@ def render_todo_board(todo_list_id: int) -> None:
     def refresh_board() -> None:
         board.refresh()
 
-    def remove_todo(todo: Todo) -> None:
-        if todo.id is None:
-            return
-
-        if delete_todo(todo.id):
-            ui.notify("Todo gelöscht.", color="positive")
-        else:
-            ui.notify("Todo konnte nicht gelöscht werden.", color="warning")
-        board.refresh()
-
     def handle_drop(todo: Todo, column_name: str) -> None:
         status = next(statuses[0] for name, statuses in COLUMNS if name == column_name)
         if todo.id is not None:
@@ -418,27 +448,29 @@ def render_todo_board(todo_list_id: int) -> None:
         board.refresh()
 
     open_edit_dialog = None
+    confirm_delete_todo = render_delete_todo_confirmation(refresh_board)
 
     @ui.refreshable
     def board() -> None:
         todos = load_todos(todo_list_id)
 
-        with ui.row().classes("w-full gap-4"):
+        with ui.row().classes("w-full max-w-6xl mx-auto justify-center gap-4"):
             for column_name, statuses in COLUMNS:
                 column_todos = [todo for todo in todos if todo.status in statuses]
-                with dnd.column(column_name, on_drop=handle_drop):
+                with dnd.column(column_name, on_drop=handle_drop, count=len(column_todos)):
                     if not column_todos:
                         ui.label("Keine Todos").classes("text-gray-500 text-sm")
                     for todo in column_todos:
                         with dnd.card(todo):
-                            ui.button(
-                                icon="edit",
-                                on_click=lambda todo=todo: open_edit_dialog(todo),
-                            ).props("flat round dense").tooltip("Todo bearbeiten")
-                            ui.button(
-                                icon="delete",
-                                on_click=lambda todo=todo: remove_todo(todo),
-                            ).props("flat round dense color=negative").tooltip("Todo löschen")
+                            with ui.row().classes("w-full items-center gap-1"):
+                                ui.button(
+                                    icon="edit",
+                                    on_click=lambda todo=todo: open_edit_dialog(todo),
+                                ).props("flat round dense").tooltip("Todo bearbeiten")
+                                ui.button(
+                                    icon="delete",
+                                    on_click=lambda todo=todo: confirm_delete_todo(todo),
+                                ).props("flat round dense color=negative").tooltip("Todo löschen")
 
     open_edit_dialog = render_todo_dialog(todo_list_id, refresh_board)
     board()

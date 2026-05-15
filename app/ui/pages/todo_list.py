@@ -2,7 +2,14 @@ from nicegui import ui
 
 from app.models.todo import Status, Todo
 from app.ui.layout import create_app_layout, get_or_create_default_todo_list, require_login
-from app.ui.pages.todo_board import COLUMNS, delete_todo, load_todos, render_todo_dialog, update_todo_status
+from app.ui.pages.todo_board import (
+    COLUMNS,
+    count_todos_for_statuses,
+    load_todos,
+    render_delete_todo_confirmation,
+    render_todo_dialog,
+    update_todo_status,
+)
 
 
 def render_todo_list_view(todo_list_id: int) -> None:
@@ -16,30 +23,21 @@ def render_todo_list_view(todo_list_id: int) -> None:
         update_todo_status(todo.id, status)
         todo_groups.refresh()
 
-    def remove_todo(todo: Todo) -> None:
-        if todo.id is None:
-            return
-
-        if delete_todo(todo.id):
-            ui.notify("Todo gelöscht.", color="positive")
-        else:
-            ui.notify("Todo konnte nicht gelöscht werden.", color="warning")
-        todo_groups.refresh()
-
     open_edit_dialog = None
+    confirm_delete_todo = render_delete_todo_confirmation(refresh_list)
 
     @ui.refreshable
     def todo_groups() -> None:
         todos = load_todos(todo_list_id)
 
-        with ui.column().classes("w-full max-w-4xl gap-4"):
+        with ui.column().classes("w-full max-w-4xl mx-auto gap-4"):
             for group_name, statuses in COLUMNS:
                 group_todos = [todo for todo in todos if todo.status in statuses]
 
                 with ui.card().classes("w-full p-0"):
                     with ui.row().classes("w-full items-center px-4 py-3 bg-gray-100"):
                         ui.label(group_name).classes("text-lg font-bold")
-                        ui.badge(str(len(group_todos))).props("color=grey")
+                        ui.badge(str(count_todos_for_statuses(todos, statuses))).props("color=grey")
 
                     if not group_todos:
                         ui.label("Keine Todos").classes("text-gray-500 px-4 py-3")
@@ -74,6 +72,10 @@ def render_todo_list_view(todo_list_id: int) -> None:
                                     icon="edit",
                                     on_click=lambda todo=todo: open_edit_dialog(todo),
                                 ).props("flat round dense").tooltip("Todo bearbeiten")
+                                ui.button(
+                                    icon="delete",
+                                    on_click=lambda todo=todo: confirm_delete_todo(todo),
+                                ).props("flat round dense color=negative").tooltip("Todo löschen")
                                 if todo.attachment_path:
                                     ui.button(
                                         icon="open_in_new",
@@ -95,11 +97,6 @@ def render_todo_list_view(todo_list_id: int) -> None:
                                     icon="check",
                                     on_click=lambda todo=todo: change_status(todo, Status.DONE),
                                 ).props("flat round dense").tooltip("Als erledigt markieren")
-                                ui.button(
-                                    icon="delete",
-                                    on_click=lambda todo=todo: remove_todo(todo),
-                                ).props("flat round dense color=negative").tooltip("Todo löschen")
-
     open_edit_dialog = render_todo_dialog(todo_list_id, refresh_list)
     todo_groups()
 
@@ -113,7 +110,8 @@ def lists_page():
     create_app_layout("Listen", "/lists")
     todo_list_id = get_or_create_default_todo_list(user_id)
 
-    with ui.column().classes("w-full p-6 gap-4"):
-        ui.label("Todo-Listen").classes("text-3xl font-bold")
-        ui.label("Deine Todos in der Listenansicht.").classes("text-gray-600")
+    with ui.column().classes("w-full p-6 gap-4 items-center"):
+        with ui.column().classes("w-full max-w-4xl gap-1"):
+            ui.label("Todo-Listen").classes("text-3xl font-bold")
+            ui.label("Deine Todos in der Listenansicht.").classes("text-gray-600")
         render_todo_list_view(todo_list_id)

@@ -5,7 +5,14 @@ from nicegui import ui
 
 from app.models.todo import Status, Todo
 from app.ui.layout import create_app_layout, get_or_create_default_todo_list, require_login
-from app.ui.pages.todo_board import delete_todo, load_todos, render_todo_dialog, update_todo_status
+from app.ui.pages.todo_board import (
+    COLUMNS,
+    count_todos_for_statuses,
+    load_todos,
+    render_delete_todo_confirmation,
+    render_todo_dialog,
+    update_todo_status,
+)
 
 
 def _month_days(month: date) -> list[date | None]:
@@ -51,15 +58,7 @@ def render_calendar_view(todo_list_id: int) -> None:
         update_todo_status(todo.id, Status.DONE)
         calendar.refresh()
 
-    def remove_todo(todo: Todo) -> None:
-        if todo.id is None:
-            return
-
-        if delete_todo(todo.id):
-            ui.notify("Todo gelöscht.", color="positive")
-        else:
-            ui.notify("Todo konnte nicht gelöscht werden.", color="warning")
-        calendar.refresh()
+    confirm_delete_todo = None
 
     @ui.refreshable
     def calendar() -> None:
@@ -67,12 +66,19 @@ def render_calendar_view(todo_list_id: int) -> None:
         todos_with_date = [todo for todo in todos if todo.due_date is not None]
         todos_without_date = [todo for todo in todos if todo.due_date is None]
 
-        with ui.row().classes("w-full max-w-5xl items-center"):
+        with ui.row().classes("w-full max-w-5xl mx-auto justify-center gap-2"):
+            for column_name, statuses in COLUMNS:
+                with ui.card().classes("px-4 py-2"):
+                    with ui.row().classes("items-center gap-2"):
+                        ui.label(column_name).classes("text-sm font-bold")
+                        ui.badge(str(count_todos_for_statuses(todos, statuses))).props("color=grey")
+
+        with ui.row().classes("w-full max-w-5xl mx-auto items-center justify-center"):
             ui.button(icon="chevron_left", on_click=lambda: change_month(-1)).props("flat round")
             ui.label(current_month.strftime("%B %Y")).classes("text-xl font-bold")
             ui.button(icon="chevron_right", on_click=lambda: change_month(1)).props("flat round")
 
-        with ui.grid(columns=7).classes("w-full max-w-5xl gap-2"):
+        with ui.grid(columns=7).classes("w-full max-w-5xl mx-auto gap-2"):
             for weekday in ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"]:
                 ui.label(weekday).classes("text-center text-sm font-bold text-gray-500")
 
@@ -108,6 +114,10 @@ def render_calendar_view(todo_list_id: int) -> None:
                                 icon="edit",
                                 on_click=lambda todo=todo: open_edit_dialog(todo),
                             ).props("flat round dense").tooltip("Todo bearbeiten")
+                            ui.button(
+                                icon="delete",
+                                on_click=lambda todo=todo: confirm_delete_todo(todo),
+                            ).props("flat round dense color=negative").tooltip("Todo löschen")
                             if todo.attachment_path:
                                 ui.button(
                                     icon="open_in_new",
@@ -117,14 +127,10 @@ def render_calendar_view(todo_list_id: int) -> None:
                                 ui.button(icon="check", on_click=lambda todo=todo: mark_done(todo)).props(
                                     "flat round dense"
                                 ).tooltip("Als erledigt markieren")
-                            ui.button(
-                                icon="delete",
-                                on_click=lambda todo=todo: remove_todo(todo),
-                            ).props("flat round dense color=negative").tooltip("Todo löschen")
 
         if todos_without_date:
             ui.label("Ohne Erledigungsdatum").classes("text-lg font-bold mt-4")
-            with ui.list().props("bordered separator").classes("w-full max-w-5xl bg-white"):
+            with ui.list().props("bordered separator").classes("w-full max-w-5xl mx-auto bg-white"):
                 for todo in todos_without_date:
                     with ui.item():
                         with ui.item_section():
@@ -139,16 +145,16 @@ def render_calendar_view(todo_list_id: int) -> None:
                             icon="edit",
                             on_click=lambda todo=todo: open_edit_dialog(todo),
                         ).props("flat round dense").tooltip("Todo bearbeiten")
+                        ui.button(
+                            icon="delete",
+                            on_click=lambda todo=todo: confirm_delete_todo(todo),
+                        ).props("flat round dense color=negative").tooltip("Todo löschen")
                         if todo.attachment_path:
                             ui.button(
                                 icon="open_in_new",
                                 on_click=lambda path=todo.attachment_path: ui.navigate.to(path, new_tab=True),
                             ).props("flat round dense").tooltip("Dokument öffnen")
-                        ui.button(
-                            icon="delete",
-                            on_click=lambda todo=todo: remove_todo(todo),
-                        ).props("flat round dense color=negative").tooltip("Todo löschen")
-
+    confirm_delete_todo = render_delete_todo_confirmation(calendar.refresh)
     open_edit_dialog = render_todo_dialog(todo_list_id, calendar.refresh)
     calendar()
 
@@ -162,7 +168,8 @@ def calendar_page():
     create_app_layout("Kalender", "/calendar")
     todo_list_id = get_or_create_default_todo_list(user_id)
 
-    with ui.column().classes("w-full p-6 gap-4"):
-        ui.label("Todo-Kalender").classes("text-3xl font-bold")
-        ui.label("Todos werden anhand ihres Erledigungsdatums angezeigt.").classes("text-gray-600")
+    with ui.column().classes("w-full p-6 gap-4 items-center"):
+        with ui.column().classes("w-full max-w-5xl gap-1"):
+            ui.label("Todo-Kalender").classes("text-3xl font-bold")
+            ui.label("Todos werden anhand ihres Erledigungsdatums angezeigt.").classes("text-gray-600")
         render_calendar_view(todo_list_id)
