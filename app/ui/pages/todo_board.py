@@ -88,6 +88,11 @@ def update_todo_status(todo_id: int, status: Status) -> None:
         TodoHandler(session).update(todo_id, status=status.value, progress=progress)
 
 
+def delete_todo(todo_id: int) -> bool:
+    with Session(engine) as session:
+        return TodoHandler(session).delete(todo_id)
+
+
 def update_todo_details(
     todo_id: int,
     title: str,
@@ -245,6 +250,16 @@ def render_todo_board(todo_list_id: int) -> None:
     def refresh_board() -> None:
         board.refresh()
 
+    def remove_todo(todo: Todo) -> None:
+        if todo.id is None:
+            return
+
+        if delete_todo(todo.id):
+            ui.notify("Todo gelöscht.", color="positive")
+        else:
+            ui.notify("Todo konnte nicht gelöscht werden.", color="warning")
+        board.refresh()
+
     def handle_drop(todo: Todo, column_name: str) -> None:
         status = next(statuses[0] for name, statuses in COLUMNS if name == column_name)
         if todo.id is not None:
@@ -269,6 +284,10 @@ def render_todo_board(todo_list_id: int) -> None:
                                 icon="edit",
                                 on_click=lambda todo=todo: open_edit_dialog(todo),
                             ).props("flat round dense").tooltip("Todo bearbeiten")
+                            ui.button(
+                                icon="delete",
+                                on_click=lambda todo=todo: remove_todo(todo),
+                            ).props("flat round dense color=negative").tooltip("Todo löschen")
 
     open_edit_dialog = render_todo_dialog(todo_list_id, refresh_board)
     board()

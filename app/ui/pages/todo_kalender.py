@@ -5,7 +5,7 @@ from nicegui import ui
 
 from app.models.todo import Status, Todo
 from app.ui.layout import create_app_layout, get_or_create_default_todo_list, require_login
-from app.ui.pages.todo_board import load_todos, render_todo_dialog, update_todo_status
+from app.ui.pages.todo_board import delete_todo, load_todos, render_todo_dialog, update_todo_status
 
 
 def _month_days(month: date) -> list[date | None]:
@@ -49,6 +49,16 @@ def render_calendar_view(todo_list_id: int) -> None:
             return
 
         update_todo_status(todo.id, Status.DONE)
+        calendar.refresh()
+
+    def remove_todo(todo: Todo) -> None:
+        if todo.id is None:
+            return
+
+        if delete_todo(todo.id):
+            ui.notify("Todo gelöscht.", color="positive")
+        else:
+            ui.notify("Todo konnte nicht gelöscht werden.", color="warning")
         calendar.refresh()
 
     @ui.refreshable
@@ -98,6 +108,10 @@ def render_calendar_view(todo_list_id: int) -> None:
                                 ui.button(icon="check", on_click=lambda todo=todo: mark_done(todo)).props(
                                     "flat round dense"
                                 ).tooltip("Als erledigt markieren")
+                            ui.button(
+                                icon="delete",
+                                on_click=lambda todo=todo: remove_todo(todo),
+                            ).props("flat round dense color=negative").tooltip("Todo löschen")
 
         if todos_without_date:
             ui.label("Ohne Erledigungsdatum").classes("text-lg font-bold mt-4")
@@ -111,6 +125,10 @@ def render_calendar_view(todo_list_id: int) -> None:
                             icon="edit",
                             on_click=lambda todo=todo: open_edit_dialog(todo),
                         ).props("flat round dense").tooltip("Todo bearbeiten")
+                        ui.button(
+                            icon="delete",
+                            on_click=lambda todo=todo: remove_todo(todo),
+                        ).props("flat round dense color=negative").tooltip("Todo löschen")
 
     open_edit_dialog = render_todo_dialog(todo_list_id, calendar.refresh)
     calendar()
