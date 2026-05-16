@@ -1,13 +1,16 @@
-from typing import Optional
 from datetime import date
-from sqlmodel import Session, select
+from typing import Optional
+
+from sqlmodel import select
+
 from app.models.todo import Todo, Priority, Status
 from app.services.BaseHandler import BaseHandler
 
-#by matthias
+
+# by Matthias
 class TodoHandler(BaseHandler):
 
-# Festlegen des Modells, das von diesem Handler verwaltet wird
+    # Festlegen des Modells, das von diesem Handler verwaltet wird
     model = Todo
 
     # Aktualisieren eines To-Dos anhand seiner ID und optionaler Felder
@@ -26,9 +29,13 @@ class TodoHandler(BaseHandler):
         due_date: Optional[date] = None,
         labels: Optional[str] = None,
     ) -> Optional[Todo]:
+        # Zuerst wird das bestehende To-Do aus der Datenbank geholt
         todo = self.session.get(Todo, todo_id)
-        if not todo:
+        if todo is None:
+            # Wenn kein To-Do gefunden wurde, gibt die Methode None zurueck
             return None
+
+        # Nur Felder mit einem neuen Wert werden aktualisiert
         if title is not None:
             todo.title = title
         if description is not None:
@@ -41,11 +48,13 @@ class TodoHandler(BaseHandler):
             todo.attachment_name = attachment_name
         if priority is not None:
             try:
+                # String-Werte werden in das Priority-Enum umgewandelt
                 todo.priority = Priority(priority)
             except ValueError:
                 raise ValueError(f"Ungültige Priorität: {priority}")
         if status is not None:
             try:
+                # String-Werte werden in das Status-Enum umgewandelt
                 todo.status = Status(status)
             except ValueError:
                 raise ValueError(f"Ungültiger Status: {status}")
@@ -60,8 +69,8 @@ class TodoHandler(BaseHandler):
         if labels is not None:
             todo.labels = labels
 
-        self.session.commit()
-        self.session.refresh(todo)
+        # Speichern laeuft ueber die geerbte Methode aus BaseHandler
+        self.save(todo)
         return todo
 
     # Abrufen aller To-Dos einer bestimmten To-Do-Liste anhand ihrer ID
@@ -83,22 +92,24 @@ class TodoHandler(BaseHandler):
 
     # Umschalten des Status eines To-Dos zwischen "offen" und "erledigt"
     def toggle_status(self, todo_id: int) -> Optional[Todo]:
+        # To-Do suchen, bevor der Status veraendert wird
         todo = self.session.get(Todo, todo_id)
-        if not todo:
+        if todo is None:
             return None
 
         todo.toggle_status()
-        self.session.commit()
-        self.session.refresh(todo)
+        # Aenderung speichern und Objekt aktualisieren
+        self.save(todo)
         return todo
 
     # Aktualisieren des Fortschritts eines To-Dos
     def update_progress(self, todo_id: int, progress: int) -> Optional[Todo]:
+        # To-Do suchen, bevor der Fortschritt veraendert wird
         todo = self.session.get(Todo, todo_id)
-        if not todo:
+        if todo is None:
             return None
 
         todo.update_progress(progress)
-        self.session.commit()
-        self.session.refresh(todo)
+        # Aenderung speichern und Objekt aktualisieren
+        self.save(todo)
         return todo
