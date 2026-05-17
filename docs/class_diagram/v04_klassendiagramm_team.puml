@@ -1,0 +1,247 @@
+@startuml Klassendiagramm_v04_team
+
+skinparam classAttributeIconSize 0
+skinparam classFontSize 13
+skinparam classBackgroundColor #F7F7F7
+skinparam classBorderColor #888888
+skinparam arrowColor #555555
+skinparam packageBackgroundColor #EFEFEF
+skinparam packageBorderColor #AAAAAA
+
+package "Präsentationsschicht (Browser / NiceGUI Engine)" #E8F4FD {
+  note "Thin Client — Vue.js + Quasar via NiceGUI\nAnsichten: Board · Liste · Zeitplan · Kalender · Dashboard\nKeine eigenen Python-Klassen, nur ui.py (Funktionen)" as N1
+}
+
+package "Anwendungslogik / Domänenmodelle (SQLModel)" #EAF7EA {
+
+  enum Status {
+    BACKLOG
+    TODO
+    IN_PROGRESS
+    DONE
+  }
+
+  enum Priority {
+    LOW
+    MEDIUM
+    HIGH
+    CRITICAL
+  }
+
+  enum TeamRole {
+    OWNER
+    MEMBER
+  }
+
+  note right of TeamRole
+    OWNER = Ersteller des Projekts
+    Kann Mitglieder hinzufügen /
+    entfernen und TodoListen erstellen
+    MEMBER = eingeladener Benutzer
+  end note
+
+  class User <<SQLModel, table>> {
+    - id : Optional[int]
+    - firstname : str
+    - lastname : str
+    - email : str
+    - password_hash : str
+    - todo_lists : List[TodoList]
+    - team_memberships : List[TeamMembership]
+    - assigned_todos : List[Todo]
+    --
+    + {static} hash_password(plain_password : str) : str
+    + check_password(plain_password : str) : bool
+    + full_name() : str
+    + __str__() : str
+    + __repr__() : str
+    + __eq__(other : object) : bool
+  }
+
+  class Team <<SQLModel, table>> {
+    - id : Optional[int]
+    - name : str
+    - description : str
+    - created_at : datetime
+    - created_by_id : Optional[int]
+    - memberships : List[TeamMembership]
+    - todo_lists : List[TodoList]
+    --
+    + get_member_ids() : list[int]
+    + __str__() : str
+    + __repr__() : str
+    + __eq__(other : object) : bool
+  }
+
+  note top of Team
+    Wird im UI als "Projekt" bezeichnet.
+    Jeder User kann ein Projekt erstellen.
+    created_by_id identifiziert den Ersteller.
+  end note
+
+  class TeamMembership <<SQLModel, table>> {
+    - id : Optional[int]
+    - team_id : Optional[int]
+    - user_id : Optional[int]
+    - role : TeamRole
+    - joined_at : datetime
+    - team : Optional[Team]
+    - user : Optional[User]
+    --
+    + __repr__() : str
+    + __eq__(other : object) : bool
+  }
+
+  note top of TeamMembership
+    Verbindet User mit Projekt.
+    Ersteller erhält role = OWNER.
+    Eingeladene User erhalten role = MEMBER.
+  end note
+
+  class TodoList <<SQLModel, table>> {
+    - id : Optional[int]
+    - name : str
+    - owner_id : Optional[int]
+    - team_id : Optional[int]
+    - owner : Optional[User]
+    - team : Optional[Team]
+    - todos : List[Todo]
+    --
+    + add_todo(todo : Todo) : void
+    + remove_todo(todo_id : int) : void
+    + get_all_todos() : list[Todo]
+    + filter_todos(status, priority) : list[Todo]
+    + __str__() : str
+    + __repr__() : str
+    + __eq__(other : object) : bool
+  }
+
+  note bottom of TodoList
+    Privat:  owner_id gesetzt, team_id = NULL
+    Projekt: team_id gesetzt → gehört dem Projekt
+    Nur OWNER des Projekts kann Listen erstellen
+  end note
+
+  class Todo <<SQLModel, table>> {
+    - id : Optional[int]
+    - title : str
+    - description : str
+    - link : str
+    - attachment_path : str
+    - attachment_name : str
+    - priority : Priority
+    - status : Status
+    - progress : int
+    - start_date : Optional[date]
+    - due_date : Optional[date]
+    - labels : str
+    - created_at : datetime
+    - todo_list_id : Optional[int]
+    - assigned_to_id : Optional[int]
+    - todo_list : Optional[TodoList]
+    - assigned_to : Optional[User]
+    --
+    + toggle_status() : void
+    + is_overdue() : bool
+    + update_progress(value : int) : void
+    + from_dict(data : dict) : Todo
+    + __str__() : str
+    + __repr__() : str
+    + __eq__(other : object) : bool
+    + __lt__(other : Todo) : bool
+  }
+
+  note right of Todo
+    assigned_to_id: optional
+    Welches Projektmitglied ist zuständig?
+    progress: 0–100 (%)
+    labels: kommagetrennte Zeichenkette
+  end note
+
+  User "1" *-- "0..*" TodoList         : besitzt (privat)
+  User "1" *-- "0..*" TeamMembership   : ist Mitglied in
+  Team "1" *-- "0..*" TeamMembership   : hat Mitglieder
+  Team "1" *-- "0..*" TodoList         : enthält Listen
+  TodoList "1" *-- "0..*" Todo         : enthält Todos
+  Todo "0..*" --> "0..1" User          : zugewiesen an
+  Todo ..> Status                       : nutzt
+  Todo ..> Priority                     : nutzt
+  TeamMembership ..> TeamRole           : nutzt
+
+}
+
+package "Persistenzschicht (SQLite via SQLModel + SQLAlchemy)" #FEF9E7 {
+
+  abstract class BaseHandler <<ABC>> {
+    + {static} model : type[SQLModel]
+    - session : Session
+    --
+    + __init__(session : Session)
+    + save(obj : SQLModel) : SQLModel
+    + delete(obj_id : int) : bool
+    + get_by_id(obj_id : int) : Optional[SQLModel]
+    + get_all() : list[SQLModel]
+    + {abstract} update(obj_id : int, **fields) : Optional[SQLModel]
+  }
+
+  class UserHandler {
+    + {static} model = User
+    --
+    + update(user_id, firstname?, lastname?, email?) : Optional[User]
+    + get_by_email(email : str) : Optional[User]
+  }
+
+  class TodoListHandler {
+    + {static} model = TodoList
+    --
+    + update(todo_list_id, name?, owner_id?) : Optional[TodoList]
+    + get_lists_for_user(user_id : int) : list[TodoList]
+    + create_list(user_id : int, name : str) : TodoList
+  }
+
+  class TodoHandler {
+    + {static} model = Todo
+    --
+    + update(todo_id, title?, description?, priority?,\n  status?, progress?, start_date?, due_date?,\n  labels?, assigned_to_id?) : Optional[Todo]
+    + get_todos_for_list(todo_list_id, status_filter?, priority_filter?) : list[Todo]
+    + toggle_status(todo_id : int) : Optional[Todo]
+    + update_progress(todo_id : int, progress : int) : Optional[Todo]
+  }
+
+  class TeamHandler {
+    + {static} model = Team
+    --
+    + create_team(name : str, creator_id : int,\n  description : str) : Team
+    + update(obj_id : int, **fields) : Optional[Team]
+    + add_member(team_id, user_id) : TeamMembership
+    + remove_member(team_id : int, user_id : int) : bool
+    + get_members(team_id : int) : list[User]
+    + get_memberships(team_id : int) : list[TeamMembership]
+    + get_teams_for_user(user_id : int) : list[Team]
+    + get_team_lists(team_id : int) : list[TodoList]
+    + is_owner(team_id : int, user_id : int) : bool
+  }
+
+  BaseHandler <|-- UserHandler
+  BaseHandler <|-- TodoListHandler
+  BaseHandler <|-- TodoHandler
+  BaseHandler <|-- TeamHandler
+
+}
+
+UserHandler ..> User : verwaltet
+TodoListHandler ..> TodoList : verwaltet
+TodoHandler ..> Todo : verwaltet
+TeamHandler ..> Team : verwaltet
+TeamHandler ..> TeamMembership : verwaltet
+
+note bottom of BaseHandler
+  Abstract Base Class mit
+  @abstractmethod update().
+  Konkrete Handler erben die
+  CRUD-Methoden save / delete /
+  get_by_id / get_all und müssen
+  update() implementieren.
+end note
+
+@enduml
