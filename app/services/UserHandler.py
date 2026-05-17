@@ -1,11 +1,14 @@
 from typing import Optional
-from sqlmodel import Session, select
+
+from sqlmodel import select
+
 from app.models.user import User
 from app.services.BaseHandler import BaseHandler
 
 
+# by Matthias
 class UserHandler(BaseHandler):
-    
+
     # Festlegen des Modells, das von diesem Handler verwaltet wird
     model = User
 
@@ -17,10 +20,13 @@ class UserHandler(BaseHandler):
         lastname: Optional[str] = None,
         email: Optional[str] = None,
     ) -> Optional[User]:
+        # Zuerst wird der bestehende Benutzer aus der Datenbank geholt
         user = self.session.get(User, user_id)
-        if not user:
+        if user is None:
+            # Wenn kein Benutzer gefunden wurde, gibt die Methode None zurueck
             return None
 
+        # Nur Felder mit einem neuen Wert werden aktualisiert
         if firstname is not None:
             user.firstname = firstname
         if lastname is not None:
@@ -28,11 +34,12 @@ class UserHandler(BaseHandler):
         if email is not None:
             user.email = email
 
-        self.session.commit()
-        self.session.refresh(user)
+        # Speichern laeuft ueber die geerbte Methode aus BaseHandler
+        self.save(user)
         return user
 
     # Abrufen eines Benutzers anhand seiner E-Mail-Adresse
     def get_by_email(self, email: str) -> Optional[User]:
+        # SQLModel-Abfrage nach der eindeutigen E-Mail-Adresse
         statement = select(User).where(User.email == email)
         return self.session.exec(statement).first()
