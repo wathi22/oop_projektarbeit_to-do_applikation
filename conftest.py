@@ -15,7 +15,7 @@
 import pytest
 from sqlmodel import SQLModel, Session, create_engine
 from sqlalchemy import event
-from app.models import User, TodoList, Todo
+from app.models import User, TodoList, Todo, Team, Membership, Role
 from app.models.todo import Priority, Status
 
 @pytest.fixture
@@ -107,6 +107,40 @@ def sample_todo_list_with_todos(session, sample_user):
     session.commit()
     return todo_List
 
+
+@pytest.fixture
+def sample_user_2(session):
+    user = User(
+        firstname="Matthias",
+        lastname="Heiniger",
+        email="matthias.heiniger@example.com",
+        password_hash=User.hash_password("password123"),
+    )
+    session.add(user)
+    session.commit()
+    session.refresh(user)
+    return user
+
+@pytest.fixture
+def sample_team(session, sample_user):
+    team = Team(
+        name="Entwicklung",
+        description="Backend-Team",
+        created_by_id=sample_user.id,
+    )
+    session.add(team)
+    session.commit()
+    session.refresh(team)
+
+    membership = Membership(
+        team_id=team.id,
+        user_id=sample_user.id,
+        role=Role.OWNER,
+    )
+    session.add(membership)
+    session.commit()
+    session.refresh(membership)
+    return team
 
 @pytest.fixture
 def sample_todo(session, sample_todo_list):

@@ -4,6 +4,7 @@ from sqlmodel import SQLModel, Field, Relationship
 if TYPE_CHECKING:
     from .user import User
     from .todo import Todo
+    from .team import Team
 
 
 class TodoList(SQLModel, table=True):
@@ -12,8 +13,10 @@ class TodoList(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str
     owner_id: Optional[int] = Field(default=None, foreign_key="users.id")
+    team_id: Optional[int] = Field(default=None, foreign_key="teams.id")
 
     owner: Optional["User"] = Relationship(back_populates="todo_lists")
+    team: Optional["Team"] = Relationship(back_populates="todo_lists")
     todos: List["Todo"] = Relationship(back_populates="todo_list")
 
     def add_todo(self, todo: "Todo") -> None:

@@ -1,7 +1,7 @@
 from sqlmodel import SQLModel, create_engine
 from sqlalchemy import event, inspect, text
 from sqlalchemy.engine import Engine
-from app.models import User, TodoList, Todo
+from app.models import User, TodoList, Todo, Team, Membership
 
 # Erstellung der SQLite-Datenbank und Aktivierung von Foreign Key Constraints
 engine = create_engine("sqlite:///database.db", echo=False)
@@ -17,6 +17,7 @@ def set_sqlite_pragma(dbapi_connection, connection_record):
 def init_db():
     SQLModel.metadata.create_all(engine)
     ensure_todo_attachment_columns()
+    ensure_team_columns()
 
 
 def ensure_todo_attachment_columns():
@@ -31,3 +32,15 @@ def ensure_todo_attachment_columns():
         for column_name, column_type in new_columns.items():
             if column_name not in columns:
                 connection.execute(text(f"ALTER TABLE todos ADD COLUMN {column_name} {column_type}"))
+
+
+def ensure_team_columns():
+    todolist_columns = {col["name"] for col in inspect(engine).get_columns("todolists")}
+    if "team_id" not in todolist_columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE todolists ADD COLUMN team_id INTEGER REFERENCES teams(id)"))
+
+    todo_columns = {col["name"] for col in inspect(engine).get_columns("todos")}
+    if "assigned_to_id" not in todo_columns:
+        with engine.begin() as connection:
+            connection.execute(text("ALTER TABLE todos ADD COLUMN assigned_to_id INTEGER REFERENCES users(id)"))

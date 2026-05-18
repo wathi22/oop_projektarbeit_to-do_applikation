@@ -4,6 +4,8 @@ import bcrypt
 
 if TYPE_CHECKING:
     from .todo_list import TodoList
+    from .team_membership import Membership
+    from .todo import Todo
 
 
 class User(SQLModel, table=True):
@@ -16,6 +18,8 @@ class User(SQLModel, table=True):
     password_hash: str
 
     todo_lists: List["TodoList"] = Relationship(back_populates="owner")
+    memberships: List["Membership"] = Relationship(back_populates="user")
+    assigned_todos: List["Todo"] = Relationship(back_populates="assigned_to")
 
     @staticmethod
     def hash_password(plain_password: str) -> str:

@@ -5,6 +5,7 @@ from enum import Enum
 
 if TYPE_CHECKING:
     from .todo_list import TodoList
+    from .user import User
 
 
 # Status- und Prioritäts-Enums für bessere Lesbarkeit und Wartbarkeit
@@ -38,7 +39,10 @@ class Todo(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.now)
 
     todo_list_id: Optional[int] = Field(default=None, foreign_key="todolists.id")
+    assigned_to_id: Optional[int] = Field(default=None, foreign_key="users.id")
+
     todo_list: Optional["TodoList"] = Relationship(back_populates="todos")
+    assigned_to: Optional["User"] = Relationship(back_populates="assigned_todos")
 
     def toggle_status(self) -> None:
         if self.status == Status.BACKLOG:
